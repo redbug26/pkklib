@@ -1,6 +1,6 @@
 #include "main.h"
 
-#include "pkklib/pkklib.h"
+#include "pkklib.h"
 
 int main() {
     pkk_init();
