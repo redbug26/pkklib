@@ -41,7 +41,9 @@ Full documentation is under development and will be available in the docs/ folde
 
 ### Sample projet from Crazy Piri using the PKKlib:
 
-Tetris Port by Crazy Piri (us)
+[Tetris GB Clone](https://github.com/redbug26/picocalc-tetris) by Crazy Piri (us)
+
+![Screenshot](https://raw.githubusercontent.com/redbug26/picocalc-tetris/main/res/gfx/main.gif)
 
 ### These projects are known to be based on the PKKlib:
 
