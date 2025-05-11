@@ -3,7 +3,7 @@
   "image": "pico",
   "mounts": [
     "source=${localWorkspaceFolder},target=/src,type=bind",
-    "source=${localWorkspaceFolder}/../src/pkklib,target=/src/pkklib,type=bind"
+    "source=${localWorkspaceFolder}/../pkklib/src,target=/src/pkklib,type=bind"
   ],
   "workspaceFolder": "/src",
   "extensions": ["ms-vscode.cpptools"]
