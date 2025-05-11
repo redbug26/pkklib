@@ -1,9 +1,7 @@
-# add_executable(bin2c ${CMAKE_CURRENT_LIST_DIR}/tools/bin2c.c)
 
 set(PKKLIB_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
 pico_sdk_init()
-
 
 target_compile_definitions(${DEST} PRIVATE
     PSRAM_MUTEX=1

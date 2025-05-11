@@ -75,6 +75,17 @@ You can report issues or request features via the [GitHub Issues page](https://g
 
 ---
 
+## 📝 TODO
+
+- [ ] Remove STL dependencies (C++ files) as the C++ runtime increases the binary size by 290 KB!
+- [ ] Add sprite support for tile-based graphics
+- [ ] Complete full documentation in the `docs/` folder
+- [ ] Add more example projects using PKKlib
+- [ ] Improve sound support and add more audio features
+
+
+---
+
 ## 🧪 License
 
 **PKKlib** is released under the MIT License — free to use, modify, and distribute.

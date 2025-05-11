@@ -13,11 +13,5 @@ target_sources(pkklib INTERFACE
     hxcmod.c
     ymplay.c
 
-    libstsound/Ymload.cpp
-    libstsound/digidrum.cpp
-    libstsound/YmFilters.cpp
-    libstsound/LzhLib.cpp
-    libstsound/YmMusic.cpp
-    libstsound/Ym2149Ex.cpp
-    libstsound/YmUserInterface.cpp
+
     )
