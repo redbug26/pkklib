@@ -4,6 +4,8 @@ set(DEST "template")
 
 # ---- BEGIN PKKLIB CONFIG ----
 
+include(${CMAKE_CURRENT_LIST_DIR}/pkklib/res.cmake)
+
 set(PICO_SDK_PATH "/home/dev/git/pico-sdk")
 
 add_executable(${DEST}
