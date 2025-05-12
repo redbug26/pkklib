@@ -8,9 +8,8 @@ struct ColorEntry {
     u8 red, green, blue;
 };
 
-
-u32 dwWidth;  // Buffer width in pixels
-u32 dwHeight; // Buffer height in pixels
+u32 dwWidth;   // Buffer width in pixels
+u32 dwHeight;  // Buffer height in pixels
 
 typedef s16 (*pfctWritePixel)(u8);
 
@@ -26,8 +25,12 @@ s16 SkipObject(void);
 
 s16 ReadByte(void);
 
-s16 ReadScreenDesc(u32 *w, u32 *h, s16 *ColorRez, s16 *FillColor, u16 *NumColors, struct ColorEntry ColorMap[], s16 ColorMapSize);
-s16 ReadImageDesc(s16 *LeftEdge, s16 *TopEdge, s16 *Width, s16 *Height, s16 *Interlaced, u16 *NumColors, struct ColorEntry ColorMap[], s16 ColorMapSize);
+s16 ReadScreenDesc(u32 *w, u32 *h, s16 *ColorRez, s16 *FillColor,
+                   u16 *NumColors, struct ColorEntry ColorMap[],
+                   s16 ColorMapSize);
+s16 ReadImageDesc(s16 *LeftEdge, s16 *TopEdge, s16 *Width, s16 *Height,
+                  s16 *Interlaced, u16 *NumColors, struct ColorEntry ColorMap[],
+                  s16 ColorMapSize);
 
 s16 read_code(void);
 void init_table(s16 min_code_size);
@@ -41,17 +44,19 @@ static u8 *inbuf;
 static int inpos;
 static int insize;
 
-static s16 BackdropWidth, BackdropHeight; // size of the GIF virtual screen */
-static s16 LeftEdge, TopEdge;                     // coordinates of the GIF image or */
-static s16 RightEdge, BottomEdge;                 // text object */
+static s16 BackdropWidth, BackdropHeight;  // size of the GIF virtual screen */
+static s16 LeftEdge, TopEdge;              // coordinates of the GIF image or */
+static s16 RightEdge, BottomEdge;          // text object */
 static u16 DefaultNumColors;
 static u16 LocalNumColors;
-static s16 X, Y; // current point on screen */
+static s16 X, Y;  // current point on screen */
 static s16 InterlacePass;
-static s16 Interlaced; // image is "interlaced" */
+static s16 Interlaced;  // image is "interlaced" */
 
 static struct ColorEntry DefaultColorMap[256];
 static struct ColorEntry LocalColorMap[256];
+
+static struct ColorEntry *colorMap;
 
 static char GIFsignature[7];
 
@@ -61,8 +66,8 @@ static s16 LineOffset[5];
 static s16 hWidth, hHeight;
 
 struct code_entry {
-    s16 prefix;      // prefix code
-    char suffix;     // suffix character
+    s16 prefix;   // prefix code
+    char suffix;  // suffix character
     char stack;
 };
 
@@ -85,29 +90,27 @@ static struct code_entry *code_table;
 
 static s16 mask[12];
 
-
 void InitGif(u8 *buf, int size);
 
-void ReadBackgroundGifInfo(u32 *w, u32 *h, unsigned char *pImageFileMem, int dwImageFileSize)
-{
+void ReadBackgroundGifInfo(u32 *w, u32 *h, unsigned char *pImageFileMem,
+                           int dwImageFileSize) {
     InitGif(pImageFileMem, dwImageFileSize);
 
     *w = dwWidth;
     *h = dwHeight;
 }
 
-
-void InitGif(u8 *buf, int size)
-{
-    s16 ColorRez;      /* not used yet */
-    s16 FillColor;     /* color index of fill color */
+void InitGif(u8 *buf, int size) {
+    s16 ColorRez;  /* not used yet */
+    s16 FillColor; /* color index of fill color */
 
     char DGIFsignature[7] = "GIF87a";
 
     s16 DBaseLine[5] = {0, 4, 2, 1, 0};
     s16 DLineOffset[5] = {8, 8, 4, 2, 0};
 
-    s16 Dmask[12] = {0x001, 0x003, 0x007, 0x00F, 0x01F, 0x03F, 0x07F, 0x0FF, 0x1FF, 0x3FF, 0x7FF, 0xFFF};
+    s16 Dmask[12] = {0x001, 0x003, 0x007, 0x00F, 0x01F, 0x03F,
+                     0x07F, 0x0FF, 0x1FF, 0x3FF, 0x7FF, 0xFFF};
 
     memcpy(GIFsignature, DGIFsignature, 7 * sizeof(char));
     memcpy(BaseLine, DBaseLine, 5 * sizeof(s16));
@@ -122,20 +125,21 @@ void InitGif(u8 *buf, int size)
 
     // Get the screen description
 
-    if (!ReadScreenDesc(&dwWidth, &dwHeight, &ColorRez, &FillColor, &DefaultNumColors, DefaultColorMap, 256)) { // Invalid GIF dataset
+    if (!ReadScreenDesc(&dwWidth, &dwHeight, &ColorRez, &FillColor,
+                        &DefaultNumColors, DefaultColorMap,
+                        256)) {  // Invalid GIF dataset
         dwWidth = 0;
         dwHeight = 0;
         return;
     }
 } /* InitGif */
 
-void OpenGif(u8 *buf, int size)
-{
+void OpenGif(u8 *buf, int size) {
     s16 Width, Height;
     unsigned int Done;
 
-    s16 Id;             /* object identifier */
-    s16 Status;     /* return status code */
+    s16 Id;     /* object identifier */
+    s16 Status; /* return status code */
 
     outpos = 0;
 
@@ -145,13 +149,16 @@ void OpenGif(u8 *buf, int size)
 
     while (!Done) {
         switch (ReadByte()) {
-            case -1:      // ERREUR DANS LE GIF ! A SUPPRIMER APRES // ADD BY REDBUG ?
-            case ';':     // End of the GIF dataset
+            case -1:  // ERREUR DANS LE GIF ! A SUPPRIMER APRES // ADD BY REDBUG
+                      // ?
+            case ';':  // End of the GIF dataset
                 Done = TRUE;
                 break;
 
-            case ',':     // Start of an image object Read the image description.
-                if (!ReadImageDesc(&LeftEdge, &TopEdge, &Width, &Height, &Interlaced, &LocalNumColors, LocalColorMap, 256)) {
+            case ',':  // Start of an image object Read the image description.
+                if (!ReadImageDesc(&LeftEdge, &TopEdge, &Width, &Height,
+                                   &Interlaced, &LocalNumColors, LocalColorMap,
+                                   256)) {
                     dwWidth = 0;
                     dwHeight = 0;
                     return;
@@ -161,8 +168,10 @@ void OpenGif(u8 *buf, int size)
                 dwHeight = Height;
                 dwWidth = Width;
 
-                if (LocalNumColors > 0) {       // Change the palette table
-                } else if (DefaultNumColors > 0) {     // Reset the palette table back to the default setting
+                if (LocalNumColors > 0) {  // Change the palette table
+                } else if (DefaultNumColors >
+                           0) {  // Reset the palette table back to the default
+                                 // setting
                 }
 
                 X = LeftEdge;
@@ -173,7 +182,7 @@ void OpenGif(u8 *buf, int size)
 
                 Status = Expand_Data();
 
-                if (Status != 0) { // Error expanding the raster image
+                if (Status != 0) {  // Error expanding the raster image
                     dwWidth = 0;
                     dwHeight = 0;
                     return;
@@ -185,9 +194,9 @@ void OpenGif(u8 *buf, int size)
             case '!':
                 /* Start of an extended object (not in rev 87a) */
 
-                Id = ReadByte();         /* Get the object identifier */
+                Id = ReadByte(); /* Get the object identifier */
 
-                if (Id < 0) { // Error reading object identifier
+                if (Id < 0) {  // Error reading object identifier
                     dwWidth = 0;
                     dwHeight = 0;
                     return;
@@ -199,12 +208,11 @@ void OpenGif(u8 *buf, int size)
                  * will just skip over them.  In the future, we will handle
                  * the extended object here. */
 
-                if (!SkipObject())
-                    Done = TRUE;
+                if (!SkipObject()) Done = TRUE;
 
                 break;
 
-            default:     // Error
+            default:  // Error
                 dwWidth = 0;
                 dwHeight = 0;
                 return;
@@ -214,8 +222,7 @@ void OpenGif(u8 *buf, int size)
     }
 } /* OpenGif */
 
-void init_table(s16 min_code_size)
-{
+void init_table(s16 min_code_size) {
     code_size = (s16)(min_code_size + 1);
     clear_code = (s16)(1 << min_code_size);
     eof_code = (s16)(clear_code + 1);
@@ -224,8 +231,7 @@ void init_table(s16 min_code_size)
     max_code = (s16)(1 << code_size);
 }
 
-s16 read_code(void)
-{
+s16 read_code(void) {
     s16 bytes_to_move, i, ch;
     s32 temp;
 
@@ -240,11 +246,13 @@ s16 read_code(void)
         }
 
         while (i < 64) {
-            if (bytes_unread == 0) { // Get the length of the next record. A zero-length record denotes "end of data".
+            if (bytes_unread ==
+                0) {  // Get the length of the next record. A zero-length record
+                      // denotes "end of data".
                 bytes_unread = ReadByte();
 
                 if (bytes_unread < 1) {
-                    if (bytes_unread == 0)                     /* end of data */
+                    if (bytes_unread == 0) /* end of data */
                         break;
                     else {
                         free((char *)code_table);
@@ -267,10 +275,11 @@ s16 read_code(void)
     }
 
     bit_offset = (s16)(bit_offset + code_size);
-    temp = (long)code_buffer[byte_offset] | (long)code_buffer[byte_offset + 1] << 8 | (long)code_buffer[byte_offset + 2] << 16;
+    temp = (long)code_buffer[byte_offset] |
+           (long)code_buffer[byte_offset + 1] << 8 |
+           (long)code_buffer[byte_offset + 2] << 16;
 
-    if (bits_left > 0)
-        temp >>= bits_left;
+    if (bits_left > 0) temp >>= bits_left;
 
     return temp & mask[code_size - 1];
 } /* read_code */
@@ -291,14 +300,14 @@ s16 read_code(void)
  *	< -3	error status from the get_byte or put_byte routine
  */
 
-s16 Expand_Data(void)
-{
+s16 Expand_Data(void) {
     int status;
-    s16 sp;     /* stack ptr */
+    s16 sp; /* stack ptr */
     s16 min_code_size;
     int largest_code = 4095;
 
-    code_table = (struct code_entry *)malloc(sizeof(struct code_entry) * (largest_code + 1));
+    code_table = (struct code_entry *)malloc(sizeof(struct code_entry) *
+                                             (largest_code + 1));
 
     if (code_table == NULL) {
         return -2;
@@ -318,8 +327,8 @@ s16 Expand_Data(void)
 
     init_table(min_code_size);
     sp = 0;
-    bit_offset = 64 * 8;     // force "read_code" to start a new
-    bytes_unread = 0;           // record
+    bit_offset = 64 * 8;  // force "read_code" to start a new
+    bytes_unread = 0;     // record
 
     while ((code = (s16)read_code()) != eof_code) {
         if (code == -1) {
@@ -383,8 +392,9 @@ s16 Expand_Data(void)
  * color map.
  */
 
-s16 ReadScreenDesc(u32 *w, u32 *h, s16 *ColorRez, s16 *FillColor, u16 *NumColors, struct ColorEntry ColorMap[], s16 ColorMapSize)
-{
+s16 ReadScreenDesc(u32 *w, u32 *h, s16 *ColorRez, s16 *FillColor,
+                   u16 *NumColors, struct ColorEntry ColorMap[],
+                   s16 ColorMapSize) {
     u8 Buffer[16];
     s16 I, J, Status, HaveColorMap, NumPlanes;
 
@@ -430,18 +440,19 @@ s16 ReadScreenDesc(u32 *w, u32 *h, s16 *ColorRez, s16 *FillColor, u16 *NumColors
     /*  Reserved = Buffer[12]; */
 
     if (HaveColorMap) {
+        colorMap = ColorMap;
+
         for (I = 0; I < *NumColors; I++) {
             for (J = 0; J < 3; J++) {
                 Status = ReadByte();
-                if (Status < 0)
-                    return FALSE;
+                if (Status < 0) return FALSE;
                 Buffer[J] = Status & 255;
             }
 
             if (I < ColorMapSize) {
-                ColorMap[I].red = Buffer[0];                   // NDS: >> 3
-                ColorMap[I].green = Buffer[1];                 // NDS: >> 3
-                ColorMap[I].blue = Buffer[2];                  // NDS: >> 3
+                ColorMap[I].red = Buffer[0];    // NDS: >> 3
+                ColorMap[I].green = Buffer[1];  // NDS: >> 3
+                ColorMap[I].blue = Buffer[2];   // NDS: >> 3
             }
         }
     } else {
@@ -455,14 +466,14 @@ s16 ReadScreenDesc(u32 *w, u32 *h, s16 *ColorRez, s16 *FillColor, u16 *NumColors
  * Read the image description and the optional color map.
  */
 
-s16 ReadImageDesc(s16 *LeftEdge, s16 *TopEdge, s16 *Width, s16 *Height, s16 *Interlaced, u16 *NumColors, struct ColorEntry ColorMap[], s16 ColorMapSize)
-{
+s16 ReadImageDesc(s16 *LeftEdge, s16 *TopEdge, s16 *Width, s16 *Height,
+                  s16 *Interlaced, u16 *NumColors, struct ColorEntry ColorMap[],
+                  s16 ColorMapSize) {
     unsigned char Buffer[16];
     s16 I, J, NumPlanes, HaveColorMap, Status;
 
     for (I = 0; I < 9; I++) {
-        if ((Status = (ReadByte())) < 0)
-            return FALSE;
+        if ((Status = (ReadByte())) < 0) return FALSE;
         Buffer[I] = (unsigned char)Status;
     }
 
@@ -480,17 +491,18 @@ s16 ReadImageDesc(s16 *LeftEdge, s16 *TopEdge, s16 *Width, s16 *Height, s16 *Int
     HaveColorMap = (Buffer[8] & 0x80) != 0;
 
     if (HaveColorMap) {
+        colorMap = ColorMap;
+
         for (I = 0; I < *NumColors; I++) {
             for (J = 0; J < 3; J++) {
-                if ((Status = (ReadByte())) < 0)
-                    return FALSE;
+                if ((Status = (ReadByte())) < 0) return FALSE;
                 Buffer[J] = (unsigned char)Status;
             }
 
             if (I < ColorMapSize) {
-                ColorMap[I].red = Buffer[0];                   // NDS >> 3
-                ColorMap[I].green = Buffer[1];                 // NDS >> 3
-                ColorMap[I].blue = Buffer[2];                  // NDS >> 3
+                ColorMap[I].red = Buffer[0];    // NDS >> 3
+                ColorMap[I].green = Buffer[1];  // NDS >> 3
+                ColorMap[I].blue = Buffer[2];   // NDS >> 3
             }
         }
     } else
@@ -508,8 +520,7 @@ s16 ReadImageDesc(s16 *LeftEdge, s16 *TopEdge, s16 *Width, s16 *Height, s16 *Int
  *	-4		read error
  */
 
-s16 ReadByte(void)
-{
+s16 ReadByte(void) {
     s16 a;
 
     if (inpos >= insize) {
@@ -522,25 +533,22 @@ s16 ReadByte(void)
     return a;
 }
 
-
 /*
  * Skip over an extended GIF object.
  */
 
-s16 SkipObject(void)
-{
+s16 SkipObject(void) {
     s16 Count;
 
-    while ((Count = ReadByte()) > 0)
-        do{
-            if (ReadByte() < 0) {           /* Error reading data stream */
+    while ((Count = ReadByte()) > 0) do {
+            if (ReadByte() < 0) { /* Error reading data stream */
                 dwWidth = 0;
                 dwHeight = 0;
                 return FALSE;
             }
         } while (--Count > 0);
 
-    if (Count < 0) {   /* Error reading data stream */
+    if (Count < 0) { /* Error reading data stream */
         dwWidth = 0;
         dwHeight = 0;
         return FALSE;
@@ -548,12 +556,10 @@ s16 SkipObject(void)
         return TRUE;
 }
 
-s16 WritePixel_spi(u8 Pixel)
-{
+s16 WritePixel_spi(u8 Pixel) {
     // if (outpos >= dwHeight * dwWidth) {
     //     return 1;
     // }
-
 
     if (1 == 0) {
         uint8_t rgb[3];
@@ -564,7 +570,8 @@ s16 WritePixel_spi(u8 Pixel)
 
         spi_write_fast(Pico_LCD_SPI_MOD, rgb, 3);
     } else {
-        uint16_t rgb565 = RGB565(DefaultColorMap[Pixel].red, DefaultColorMap[Pixel].green, DefaultColorMap[Pixel].blue);
+        uint16_t rgb565 = RGB565(colorMap[Pixel].red, colorMap[Pixel].green,
+                                 colorMap[Pixel].blue);
 
         spi_write_fast(Pico_LCD_SPI_MOD, (const uint8_t *)&rgb565, 2);
     }
@@ -574,8 +581,7 @@ s16 WritePixel_spi(u8 Pixel)
     return 0;
 } /* WritePixel_spi */
 
-void pkk_displayGIF(unsigned char *pImageFileMem, int dwImageFileSize)
-{
+void pkk_displayGIF(unsigned char *pImageFileMem, int dwImageFileSize) {
     WritePixel = WritePixel_spi;
 
     InitGif(pImageFileMem, dwImageFileSize);
@@ -586,5 +592,4 @@ void pkk_displayGIF(unsigned char *pImageFileMem, int dwImageFileSize)
 
     spi_finish(Pico_LCD_SPI_MOD);
     lcd_spi_raise_cs();
-
 }

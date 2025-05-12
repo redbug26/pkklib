@@ -1,3 +1,0 @@
-[submodule "vendor/littlefs"]
-	path = vendor/littlefs
-	url = https://github.com/littlefs-project/littlefs.git
