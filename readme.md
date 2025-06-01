@@ -66,6 +66,9 @@ You can refer to the "🎮 Powered by the PKKlib" section for information on pro
 ### 4. How do I report a bug or request a feature?
 You can report issues or request features via the [GitHub Issues page](https://github.com/redbug26/pkklib/issues).
 
+### 5. How do I exit an application built with PKKlib?
+To quit an application running on the PicoCalc with PKKlib, simply press **Ctrl + Caps Lock**.
+
 ---
 
 ## 🙏 Credits & Acknowledgments
