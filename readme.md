@@ -20,7 +20,7 @@ The library provides a set of tools and functions to manage graphics, input, tim
 ## ⚙️ Requirements
 
 - A Clockwork Pi PicoCalc
-- The custom firmware **Picocalc_SD_Boot** by adwuard
+- The PicoCalc firmware **[pico_multi_booter](https://github.com/clockworkpi/PicoCalc/tree/master/Code/pico_multi_booter)**
 - A working C development environment with pico-sdk
 
 ---
@@ -58,7 +58,7 @@ Full documentation is under development and will be available in the docs/ folde
 PKKlib is specifically designed for the **Clockwork Pi PicoCalc**, a device based on the Raspberry Pi Pico.
 
 ### 2. Can I use PKKlib with other firmware?
-The library is optimized for the **Picocalc_SD_Boot** firmware by adwuard. It is possible to use it with the stock firmware by removing the ``pico_set_linker_script`` line that references the memmap file in the ``CMakeLists.txt``.
+The library is build for the PicoCalc firmware **[pico_multi_booter](https://github.com/clockworkpi/PicoCalc/tree/master/Code/pico_multi_booter)**. It is possible to use it with the stock firmware by removing the ``pico_set_linker_script`` line that references the memmap file in the ``CMakeLists.txt``.
 
 ### 3. Where can I find example projects using PKKlib?
 You can refer to the "🎮 Powered by the PKKlib" section for information on projects built with PKKlib.
@@ -69,7 +69,7 @@ You can report issues or request features via the [GitHub Issues page](https://g
 ---
 
 ## 🙏 Credits & Acknowledgments
-- Special thanks to adwuard for creating the *he *Picocalc_SD_Boot** firmware, which this library is designed to work with.
+- Special thanks to adwuard for creating the **[Picocalc_SD_Boot](https://github.com/adwuard/Picocalc_SD_Boot)** firmware, which this library is designed to work with.
 - Thanks to the **Clockwork Pi PicoCalc** community for their enthusiasm and contributions.
 - This project was heavily inspired by **SGDK** by Stéphane Dallongeville, a development kit for the Sega Mega Drive.
 
