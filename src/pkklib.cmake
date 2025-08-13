@@ -63,9 +63,3 @@ add_custom_command(TARGET ${DEST} POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/${DEST}.dis
         ${CMAKE_CURRENT_SOURCE_DIR}/out/${DEST}.dis
 )
-
-add_custom_command(TARGET ${DEST} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rename
-        ${CMAKE_CURRENT_BINARY_DIR}/${DEST}.elf.map
-        ${CMAKE_CURRENT_SOURCE_DIR}/out/${DEST}.elf.map
-)
