@@ -1,12 +1,11 @@
-#include "pkklib.h"
-
-#include "pico/stdlib.h"
 #include <hardware/watchdog.h>
 
-#include "hardware/gpio.h"
 #include "hardware/clocks.h"
+#include "hardware/gpio.h"
 #include "i2ckbd.h"
 #include "lcdspi.h"
+#include "pico/stdlib.h"
+#include "pkklib.h"
 
 #define FPS 50
 
@@ -15,23 +14,18 @@ static u8 dispBattery = 0;
 
 volatile bool vsync_flag = false;
 
-int64_t vsync_callback(alarm_id_t id, void *user_data)
-{
+int64_t vsync_callback(alarm_id_t id, void *user_data) {
     vsync_flag = true;
-    return (1000 / FPS) * 1000; // reschedule in 20ms
+    return (1000 / FPS) * 1000;  // reschedule in 20ms
 }
 
-
-void pkk_display_init(void)
-{
+void pkk_display_init(void) {
     // prepare the timer for the VSYNC
     add_alarm_in_us((1000 / FPS) * 1000, vsync_callback, NULL, true);
 
-
 } /* pkk_lcd_init */
 
-void pkk_lcd_waitVSYNC(void)
-{
+void pkk_lcd_waitVSYNC(void) {
     // kbd_interrupt();
     // if (keycheck) {
     //     keycheck--;
@@ -57,7 +51,7 @@ void pkk_lcd_waitVSYNC(void)
         bitClear(bat_pcnt, 7);
         sprintf(buf, "%d%%", bat_pcnt);
 
-        pkk_draw_text(0, 0, buf, 0xFFFF, 0x0000);
+        pkk_draw_text(NULL, 0, 0, buf, 0xFFFF, 0x0000);
 
         // if (bat_charging == 0 ) {
         //     sprintf(buf, "battery is not charging\n");
@@ -71,7 +65,7 @@ void pkk_lcd_waitVSYNC(void)
     }
 
     while (!vsync_flag) {
-        tight_loop_contents(); // idle loop
+        tight_loop_contents();  // idle loop
     }
 
     vsync_flag = false;
@@ -88,7 +82,4 @@ void pkk_lcd_waitVSYNC(void)
     // nextVSYNC += 20 * 1000; // 20ms for the next VSYNC (50Hz)
 } /* scr_waitVSYNC */
 
-void pkk_lcd_clear()
-{
-    lcd_clear();
-}
+void pkk_lcd_clear() { lcd_clear(); }

@@ -20,13 +20,15 @@ void pkk_displayGIF(unsigned char *buf, int size);
 /**
  * @brief Displays a string on the screen at the specified position.
  *
+ * @param font Pointer to the font data.
  * @param current_x X-coordinate of the starting position.
  * @param current_y Y-coordinate of the starting position.
  * @param s Pointer to the string to display.
  * @param fc Foreground color.
  * @param bc Background color.
  */
-void pkk_draw_text(u16 current_x, u16 current_y, const char *s, u16 fc, u16 bc);
+void pkk_draw_text(const u8 *font, u16 current_x, u16 current_y, const char *s,
+                   u16 fc, u16 bc);
 
 /**
  * @brief Draws a rectangle on the screen with the specified coordinates and
@@ -66,4 +68,4 @@ void pkk_draw_rect_fill(int x1, int y1, int x2, int y2, uint16_t col);
  * @param h Height of the buffer.
  * @param buf Pointer to the buffer containing the pixel data.
  */
-void pkk_draw_buf_spi(int x1, int y1, int w, int h, char *buf);
+void pkk_draw_buf_spi(int x1, int y1, int w, int h, uint16_t *buf);

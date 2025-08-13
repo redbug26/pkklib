@@ -187,10 +187,11 @@ void draw_buffer_spi(int x1, int y1, int x2, int y2, unsigned char *p) {
 //    scale - how much to scale the bitmap
 //	  fc, bc - foreground and background colour
 //    bitmap - pointer to the bitmap
-void draw_bitmap_spi(int x1, int y1, int width, int height, int scale,
-                     uint16_t f, uint16_t b, unsigned char *bitmap) {
+void draw_bitmap_spi_old(int x1, int y1, int width, int height, uint16_t f,
+                         uint16_t b, unsigned char *bitmap) {
     int i, j, k, m, n;
     int vertCoord, horizCoord, XStart, XEnd, YEnd;
+    int scale = 1;  // Scale factor for the bitmap
 
     // Check if the bitmap is completely outside the displayable area
     if (x1 >= hres || y1 >= vres || x1 + width * scale < 0 ||
@@ -245,6 +246,40 @@ void draw_bitmap_spi(int x1, int y1, int width, int height, int scale,
     }
     lcd_spi_raise_cs();  // Set CS high
 } /* draw_bitmap_spi */
+
+void draw_bitmap_spi(int x1, int y1, int width, int height, uint16_t f,
+                     uint16_t b, unsigned char *bitmap) {
+    define_region_spi(x1, y1, x1 + width - 1, y1 + height - 1, 1);
+
+    int rowBytes = (width + 7) >> 3;  // bytes per row in bitmap
+    for (uint16_t y = 0; y < height; ++y) {
+        // uint32_t screenOffset = (y1 + y) * 320 + x1;
+        uint8_t *rowPtr = bitmap + y * rowBytes;
+        uint16_t bitPos = 7;
+
+        for (uint16_t x = 0; x < width; ++x) {
+            // extract next bit and map to f or b
+
+            if ((*rowPtr >> bitPos) & 1) {
+                // buffer_scr[screenOffset + x] = f;
+                hw_send_spi((uint8_t *)&f, 2);  // Send foreground color
+
+            } else {
+                // buffer_scr[screenOffset + x] = b;
+                hw_send_spi((uint8_t *)&b, 2);  // Send foreground color
+            }
+
+            // buffer_scr[screenOffset + x] = ((*rowPtr >> bitPos) & 1) ? f : b;
+            if (bitPos > 0) {
+                bitPos--;
+            } else {
+                bitPos = 7;
+                rowPtr++;
+            }
+        }
+    }
+    lcd_spi_raise_cs();  // Set CS high
+}
 
 // Draw a filled rectangle
 // this is the basic drawing promitive used by most drawing routines
@@ -319,7 +354,7 @@ void draw_rect_spi(int x1, int y1, int x2, int y2, uint16_t col) {
  *****************************************************************************************/
 void lcd_print_char(int fc, int bc, char c, int orientation) {
     unsigned char *p, *fp, *np = NULL;
-    int modx, mody, scale = 0x01;
+    int modx, mody;
     int height, width;
 
     // to get the +, - and = chars for font 6 we fudge them by scaling up font 1
@@ -335,15 +370,15 @@ void lcd_print_char(int fc, int bc, char c, int orientation) {
         // printf("p = %d\n",p);
         np = p;
 
-        draw_bitmap_spi(current_x + modx, current_y + mody, width, height,
-                        scale, fc, bc, np);
+        draw_bitmap_spi(current_x + modx, current_y + mody, width, height, fc,
+                        bc, np);
     } else {
         draw_rect_spi(current_x + modx, current_y + mody,
-                      current_x + modx + (width * scale),
-                      current_y + mody + (height * scale), bc);
+                      current_x + modx + (width * 1),
+                      current_y + mody + (height * 1), bc);
     }
 
-    if (orientation == ORIENT_NORMAL) current_x += width * scale;
+    if (orientation == ORIENT_NORMAL) current_x += width * 1;
 
 } /* lcd_print_char */
 

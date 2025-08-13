@@ -25,15 +25,16 @@
  *
  *       You should have received a copy of the GNU General Public License
  *       along with ST-Sound; if not, write to the Free Software
- *       Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *       Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+ * USA
  *
  *  -----------------------------------------------------------------------------*/
 
-#include <algorithm>
+// #include <algorithm>
+// #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cmath>
-#include <cstdio>
 
 #ifdef _WIN32
 #define BUILDING_DLL
@@ -55,27 +56,31 @@ static const ymint Env1100[8] = {0, 1, 0, 1, 0, 1, 0, 1};
 static const ymint Env1101[8] = {0, 1, 1, 1, 1, 1, 1, 1};
 static const ymint Env1110[8] = {0, 1, 1, 0, 0, 1, 1, 0};
 static const ymint Env1111[8] = {0, 1, 0, 0, 0, 0, 0, 0};
-static const ymint *EnvWave[16] = {Env00xx, Env00xx, Env00xx, Env00xx,
-                                   Env01xx, Env01xx, Env01xx, Env01xx,
-                                   Env1000, Env1001, Env1010, Env1011,
-                                   Env1100, Env1101, Env1110, Env1111};
+static const ymint *EnvWave[16] = {
+    Env00xx, Env00xx, Env00xx, Env00xx, Env01xx, Env01xx, Env01xx, Env01xx,
+    Env1000, Env1001, Env1010, Env1011, Env1100, Env1101, Env1110, Env1111};
 
 static ymint ymVolumeTable[5][16] =
-// Original STSound values
-// {	62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767};
+    // Original STSound values
+    // {
+    // 62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767};
 
-// Log scale hand-calculated by CloudStrife
-// {0,256,362,512,724,1024,1448,2048,2896,4096,5793,8192,11585,16384,23170,32767};
+    // Log scale hand-calculated by CloudStrife
+    // {0,256,362,512,724,1024,1448,2048,2896,4096,5793,8192,11585,16384,23170,32767};
 
-// Measurements done on a real CPC by Targhan/Arkos
-// Note : when there is noise, the table is altered. We have 5 different ones
-{
-    {0, 116, 348,   579,   1042,     1390,       2084,         3358,        4053,      6600,  9147,  12157,  16094,  20378,   26400,  32767 },
-    {0, 0,   348,   348,   1042,     1042,       2084,         2084,        4053,      4053,  9147,  12157,  16094,  16094,   26400,  32767 },
-    {0, 0,   0,     0,     3358,     3358,       3358,         4053,        4053,      4053,  6600,  6600,   6600,   32767,   32767,  32767 },
-    {0, 0,   0,     0,     0,        4053,       4053,         4053,        4053,      4053,  4053,  32767,  32767,  32767,   32767,  32767 },
-    {0, 0,   0,     0,     0,        0,          4053,         4053,        4053,      4053,  32767, 32767,  32767,  32767,   32767,  32767 }
-};
+    // Measurements done on a real CPC by Targhan/Arkos
+    // Note : when there is noise, the table is altered. We have 5 different
+    // ones
+    {{0, 116, 348, 579, 1042, 1390, 2084, 3358, 4053, 6600, 9147, 12157, 16094,
+      20378, 26400, 32767},
+     {0, 0, 348, 348, 1042, 1042, 2084, 2084, 4053, 4053, 9147, 12157, 16094,
+      16094, 26400, 32767},
+     {0, 0, 0, 0, 3358, 3358, 3358, 4053, 4053, 4053, 6600, 6600, 6600, 32767,
+      32767, 32767},
+     {0, 0, 0, 0, 0, 4053, 4053, 4053, 4053, 4053, 4053, 32767, 32767, 32767,
+      32767, 32767},
+     {0, 0, 0, 0, 0, 0, 4053, 4053, 4053, 4053, 32767, 32767, 32767, 32767,
+      32767, 32767}};
 
 /*
  * 15 = 65535
@@ -96,10 +101,7 @@ static ymint ymVolumeTable[5][16] =
  * 0 = 0
  */
 
-
-
-static ymu8 * ym2149EnvInit(ymu8 *pEnv, ymint a, ymint b)
-{
+static ymu8 *ym2149EnvInit(ymu8 *pEnv, ymint a, ymint b) {
     ymint i;
     ymint d;
 
@@ -114,11 +116,8 @@ static ymu8 * ym2149EnvInit(ymu8 *pEnv, ymint a, ymint b)
     return pEnv;
 }
 
-
-CYm2149Ex::CYm2149Ex(ymu32 masterClock, ymint prediv, ymu32 playRate)
-{
+CYm2149Ex::CYm2149Ex(ymu32 masterClock, ymint prediv, ymu32 playRate) {
     ymint env;
-
 
     frameCycle = 0;
     // --------------------------------------------------------
@@ -133,8 +132,8 @@ CYm2149Ex::CYm2149Ex(ymu32 masterClock, ymint prediv, ymu32 playRate)
         }
     }
 
-    internalClock = masterClock / prediv;         // YM at 2Mhz on ATARI ST
-    replayFrequency = playRate;                   // DAC at 44.1Khz on PC
+    internalClock = masterClock / prediv;  // YM at 2Mhz on ATARI ST
+    replayFrequency = playRate;            // DAC at 44.1Khz on PC
     cycleSample = 0;
 
     // Set volume voice pointers.
@@ -142,21 +141,21 @@ CYm2149Ex::CYm2149Ex(ymu32 masterClock, ymint prediv, ymu32 playRate)
     pVolB = &volB;
     pVolC = &volC;
 
-//    setProfile(profileAtari);
+    //    setProfile(profileAtari);
     setProfile(profileCPC);
 
-    for (ymint i = 0; i < 3; i++) {
-        filters[i].push_back(new SimpleLowPassFilter());
-        filters[i].push_back(new DCRemover());
-    }
+    // for (ymint i = 0; i < 3; i++) {
+    //     filters[i][filterCounts[i]] = new SimpleLowPassFilter();
+    //     filterCounts[i]++;
+    //     filters[i][filterCounts[i]] = new DCRemover();
+    //     filterCounts[i]++;
+    // }
 
     // Reset YM2149
     reset();
 }
 
-
-CYm2149Ex::CYm2149Ex(ymProfile profile, ymu32 playRate)
-{
+CYm2149Ex::CYm2149Ex(ymProfile profile, ymu32 playRate) {
     ymint env;
 
     frameCycle = 0;
@@ -183,34 +182,28 @@ CYm2149Ex::CYm2149Ex(ymProfile profile, ymu32 playRate)
     pVolB = &volB;
     pVolC = &volC;
 
-    for (ymint i = 0; i < 3; i++) {
-        filters[i].push_back(new SimpleLowPassFilter());
-        filters[i].push_back(new DCRemover());
-    }
+    // for (ymint i = 0; i < 3; i++) {
+    //     filters[i][filterCounts[i]] = new SimpleLowPassFilter();
+    //     filterCounts[i]++;
+    //     filters[i][filterCounts[i]] = new DCRemover();
+    //     filterCounts[i]++;
+    // }
 
     // Reset YM2149
     reset();
 }
 
-void CYm2149Ex::getChannels(ymu8 *a, ymu8 *b, ymu8 *c)
-{
+void CYm2149Ex::getChannels(ymu8 *a, ymu8 *b, ymu8 *c) {
     *a = volA / 256;
     *b = volB / 256;
     *c = volC / 256;
 }
 
-CYm2149Ex::~CYm2149Ex()
-{
-}
+CYm2149Ex::~CYm2149Ex() {}
 
-void CYm2149Ex::setClock(ymu32 _clock)
-{
-    internalClock = _clock;
-}
+void CYm2149Ex::setClock(ymu32 _clock) { internalClock = _clock; }
 
-
-ymu32 CYm2149Ex::toneStepCompute(ymu8 rHigh, ymu8 rLow)
-{
+ymu32 CYm2149Ex::toneStepCompute(ymu8 rHigh, ymu8 rLow) {
     ymint per = rHigh & 15;
 
     per = (per << 8) + rLow;
@@ -230,12 +223,10 @@ ymu32 CYm2149Ex::toneStepCompute(ymu8 rHigh, ymu8 rLow)
     return istep;
 }
 
-ymu32 CYm2149Ex::noiseStepCompute(ymu8 rNoise)
-{
+ymu32 CYm2149Ex::noiseStepCompute(ymu8 rNoise) {
     ymint per = (rNoise & 0x1f);
 
-    if (per == 0)
-        return 0;
+    if (per == 0) return 0;
 
 #ifdef YM_INTEGER_ONLY
     yms64 step = internalClock;
@@ -256,26 +247,22 @@ ymu32 CYm2149Ex::noiseStepCompute(ymu8 rNoise)
 /**
  * Emulation of noise channel
  */
-ymu32 CYm2149Ex::rndCompute(void)
-{
+ymu32 CYm2149Ex::rndCompute(void) {
     /*
      *      ymint	rBit = (rndRack&1) ^ ((rndRack>>2)&1);
      *      rndRack = (rndRack>>1) | (rBit<<16);
      *      return (rBit ? 0 : 0xffff);
      */
-    rndRack = ( ( ((rndRack & 1) > 0) ^ ((rndRack & 8) > 0)) ? 0x10000 : 0) | (rndRack >> 1);
+    rndRack = ((((rndRack & 1) > 0) ^ ((rndRack & 8) > 0)) ? 0x10000 : 0) |
+              (rndRack >> 1);
     return rndRack & 1 ? 0xFFFF : 0;
 }
 
-ymu32 CYm2149Ex::envStepCompute(ymu8 rHigh, ymu8 rLow)
-{
-
-
+ymu32 CYm2149Ex::envStepCompute(ymu8 rHigh, ymu8 rLow) {
     ymint per = rHigh;
 
     per = (per << 8) + rLow;
-    if (per < 3)
-        return 0;
+    if (per < 3) return 0;
 
 #ifdef YM_INTEGER_ONLY
     yms64 step = internalClock;
@@ -292,15 +279,13 @@ ymu32 CYm2149Ex::envStepCompute(ymu8 rHigh, ymu8 rLow)
 /**
  * Reset of all internal registers of the PSG
  */
-void CYm2149Ex::reset(void)
-{
-
+void CYm2149Ex::reset(void) {
     for (int i = 0; i < 14; i++) {
-        registers[i] = 0;         // set to 0 of all register
+        registers[i] = 0;  // set to 0 of all register
     }
 
     for (int i = 0; i < 14; i++) {
-        writeRegister(i, 0);      // write and initialisation of register
+        writeRegister(i, 0);  // write and initialisation of register
     }
 
     writeRegister(7, 0xff);
@@ -315,20 +300,20 @@ void CYm2149Ex::reset(void)
     envPhase = 0;
     envPos = 0;
 
-/*	memset(specialEffect,0,sizeof(specialEffect));
- *
- *      syncBuzzerStop();
- */
+    /*	memset(specialEffect,0,sizeof(specialEffect));
+     *
+     *      syncBuzzerStop();
+     */
 
     // Reset of all filter
-    std::list<Filter *>::iterator f_it;
 
-    for (ymint i = 0; i < 3; i++) {
-        for (f_it = filters[i].begin(); f_it != filters[i].end(); f_it++) {
-            (*f_it)->Reset();
-        }
-    }
-} // CYm2149Ex::reset
+    // for (ymint i = 0; i < 3; i++) {
+    //     for (auto filter : filters[i]) {
+    //         filter->Reset();
+    //     }
+    // }
+
+}  // CYm2149Ex::reset
 
 /*
  * void	CYm2149Ex::sidVolumeCompute(ymint voice,ymint *pVol)
@@ -345,7 +330,8 @@ void CYm2149Ex::reset(void)
  *              }
  *              else if (pVoice->bDrum)
  *              {
- * //			writeRegister(8+voice,pVoice->drumData[pVoice->drumPos>>DRUM_PREC]>>4);
+ * //
+ * writeRegister(8+voice,pVoice->drumData[pVoice->drumPos>>DRUM_PREC]>>4);
  *
  * pVol = (pVoice->drumData[pVoice->drumPos>>DRUM_PREC] * 255) / 6;
  *
@@ -378,8 +364,7 @@ void CYm2149Ex::reset(void)
  * }
  */
 
-ymsample CYm2149Ex::nextSample(void)
-{
+ymsample CYm2149Ex::nextSample(void) {
     ymint vol;
     ymint bt, bn;
 
@@ -389,17 +374,44 @@ ymsample CYm2149Ex::nextSample(void)
     }
     bn = currentNoise;
 
-    volEA = std::min(ymVolumeTable[std::min((int)(~mixerNA & currentNoise) & registers[6], 5)][envData[envShape][envPhase][envPos >> (32 - 5)]], ymVolumeTable[0][envData[envShape][envPhase][envPos >> (32 - 5)]]);
-    volEB = std::min(ymVolumeTable[std::min((int)(~mixerNB & currentNoise) & registers[6], 5)][envData[envShape][envPhase][envPos >> (32 - 5)]], ymVolumeTable[0][envData[envShape][envPhase][envPos >> (32 - 5)]]);
-    volEC = std::min(ymVolumeTable[std::min((int)(~mixerNC & currentNoise) & registers[6], 5)][envData[envShape][envPhase][envPos >> (32 - 5)]], ymVolumeTable[0][envData[envShape][envPhase][envPos >> (32 - 5)]]);
-    volA = std::min(ymVolumeTable[std::min((int)(~mixerNA & currentNoise) & registers[6], 5)][registers[8] & 15], ymVolumeTable[0][registers[8] & 15]);
-    volB = std::min(ymVolumeTable[std::min((int)(~mixerNB & currentNoise) & registers[6], 5)][registers[9] & 15], ymVolumeTable[0][registers[9] & 15]);
-    volC = std::min(ymVolumeTable[std::min((int)(~mixerNC & currentNoise) & registers[6], 5)][registers[10] & 15], ymVolumeTable[0][registers[10] & 15]);
-/*
- *              sidVolumeCompute(0,&volA);
- *              sidVolumeCompute(1,&volB);
- *              sidVolumeCompute(2,&volC);
- */
+    int idxEA = ((~mixerNA & currentNoise) & registers[6]);
+    idxEA = (idxEA < 5) ? idxEA : 5;
+    int envIdx = envData[envShape][envPhase][envPos >> (32 - 5)];
+    int valEA1 = ymVolumeTable[idxEA][envIdx];
+    int valEA2 = ymVolumeTable[0][envIdx];
+    volEA = (valEA1 < valEA2) ? valEA1 : valEA2;
+
+    int idxEB = ((~mixerNB & currentNoise) & registers[6]);
+    idxEB = (idxEB < 5) ? idxEB : 5;
+    int valEB1 = ymVolumeTable[idxEB][envIdx];
+    int valEB2 = ymVolumeTable[0][envIdx];
+    volEB = (valEB1 < valEB2) ? valEB1 : valEB2;
+
+    int idxEC = ((~mixerNC & currentNoise) & registers[6]);
+    idxEC = (idxEC < 5) ? idxEC : 5;
+    int valEC1 = ymVolumeTable[idxEC][envIdx];
+    int valEC2 = ymVolumeTable[0][envIdx];
+    volEC = (valEC1 < valEC2) ? valEC1 : valEC2;
+
+    int reg8 = registers[8] & 15;
+    int valA1 = ymVolumeTable[idxEA][reg8];
+    int valA2 = ymVolumeTable[0][reg8];
+    volA = (valA1 < valA2) ? valA1 : valA2;
+
+    int reg9 = registers[9] & 15;
+    int valB1 = ymVolumeTable[idxEB][reg9];
+    int valB2 = ymVolumeTable[0][reg9];
+    volB = (valB1 < valB2) ? valB1 : valB2;
+
+    int reg10 = registers[10] & 15;
+    int valC1 = ymVolumeTable[idxEC][reg10];
+    int valC2 = ymVolumeTable[0][reg10];
+    volC = (valC1 < valC2) ? valC1 : valC2;
+    /*
+     *              sidVolumeCompute(0,&volA);
+     *              sidVolumeCompute(1,&volB);
+     *              sidVolumeCompute(2,&volC);
+     */
     // ---------------------------------------------------
     // Tone+noise+env+DAC for three voices !
     // ---------------------------------------------------
@@ -409,7 +421,7 @@ ymsample CYm2149Ex::nextSample(void)
     // bt = 0xFFFF or 0
 #ifdef YM_INTEGER_ONLY
     bt = ((((yms32)posA) >> 31) | mixerTA) & (bn | mixerNA);
-    vol = (*pVolA) & bt * vOut[0]; // 16*8 = 24 bits
+    vol = (*pVolA) & bt * vOut[0];  // 16*8 = 24 bits
     bt = ((((yms32)posB) >> 31) | mixerTB) & (bn | mixerNB);
     vol += (*pVolB) & bt * vOut[1];
     bt = ((((yms32)posC) >> 31) | mixerTC) & (bn | mixerNC);
@@ -437,59 +449,83 @@ ymsample CYm2149Ex::nextSample(void)
             envPhase = 1;
         }
     }
-/*
- *              syncBuzzerPhase += syncBuzzerStep;
- *              if (syncBuzzerPhase&(1<<31))
- *              {
- *                      envPos = 0;
- *                      envPhase = 0;
- *                      syncBuzzerPhase &= 0x7fffffff;
- *              }
- *
- *              specialEffect[0].sidPos += specialEffect[0].sidStep;
- *              specialEffect[1].sidPos += specialEffect[1].sidStep;
- *              specialEffect[2].sidPos += specialEffect[2].sidStep;
- */
+    /*
+     *              syncBuzzerPhase += syncBuzzerStep;
+     *              if (syncBuzzerPhase&(1<<31))
+     *              {
+     *                      envPos = 0;
+     *                      envPhase = 0;
+     *                      syncBuzzerPhase &= 0x7fffffff;
+     *              }
+     *
+     *              specialEffect[0].sidPos += specialEffect[0].sidStep;
+     *              specialEffect[1].sidPos += specialEffect[1].sidStep;
+     *              specialEffect[2].sidPos += specialEffect[2].sidStep;
+     */
 
     // Apply all mono filters
-    std::list<Filter *>::iterator f_it;
-
     ymint in = vol;
-    for (f_it = filters[F_MONO].begin(); f_it != filters[F_MONO].end(); f_it++) {
-        (*f_it)->AddSample(in);
-        in = (*f_it)->GetResult();
-    }
+    // for (auto filter : filters[F_MONO]) {
+    //     filter->AddSample(in);
+    //     in = filter->GetResult();
+    // }
     return in;
-} // CYm2149Ex::nextSample
+}  // CYm2149Ex::nextSample
 
-
-void CYm2149Ex::nextSampleStereo(ymsample& left, ymsample& right)
-{
+void CYm2149Ex::nextSampleStereo(ymsample &left, ymsample &right) {
     if (noisePos & 0xffff0000) {
         currentNoise = rndCompute();
         noisePos &= 0xffff;
     }
     ymint bn = currentNoise;
 
-    // TODO - Generate only the one we're going to use (pVolA, pVolB, pVolC points on one of these only)
-    volEA = std::min(ymVolumeTable[std::min((int)(~mixerNA & currentNoise) & registers[6], 5)][envData[envShape][envPhase][envPos >> (32 - 5)]], ymVolumeTable[0][envData[envShape][envPhase][envPos >> (32 - 5)]]);
-    volEB = std::min(ymVolumeTable[std::min((int)(~mixerNB & currentNoise) & registers[6], 5)][envData[envShape][envPhase][envPos >> (32 - 5)]], ymVolumeTable[0][envData[envShape][envPhase][envPos >> (32 - 5)]]);
-    volEC = std::min(ymVolumeTable[std::min((int)(~mixerNC & currentNoise) & registers[6], 5)][envData[envShape][envPhase][envPos >> (32 - 5)]], ymVolumeTable[0][envData[envShape][envPhase][envPos >> (32 - 5)]]);
-    volA = std::min(ymVolumeTable[std::min((int)(~mixerNA & currentNoise) & registers[6], 5)][registers[8] & 15], ymVolumeTable[0][registers[8] & 15]);
-    volB = std::min(ymVolumeTable[std::min((int)(~mixerNB & currentNoise) & registers[6], 5)][registers[9] & 15], ymVolumeTable[0][registers[9] & 15]);
-    volC = std::min(ymVolumeTable[std::min((int)(~mixerNC & currentNoise) & registers[6], 5)][registers[10] & 15], ymVolumeTable[0][registers[10] & 15]);
+    // TODO - Generate only the one we're going to use (pVolA, pVolB, pVolC
+    // points on one of these only)
+    int idxEA = ((int)(~mixerNA & currentNoise) & registers[6]);
+    idxEA = (idxEA < 5) ? idxEA : 5;
+    int envIdx = envData[envShape][envPhase][envPos >> (32 - 5)];
+    int valEA1 = ymVolumeTable[idxEA][envIdx];
+    int valEA2 = ymVolumeTable[0][envIdx];
+    volEA = (valEA1 < valEA2) ? valEA1 : valEA2;
+
+    int idxEB = ((int)(~mixerNB & currentNoise) & registers[6]);
+    idxEB = (idxEB < 5) ? idxEB : 5;
+    int valEB1 = ymVolumeTable[idxEB][envIdx];
+    int valEB2 = ymVolumeTable[0][envIdx];
+    volEB = (valEB1 < valEB2) ? valEB1 : valEB2;
+
+    int idxEC = ((int)(~mixerNC & currentNoise) & registers[6]);
+    idxEC = (idxEC < 5) ? idxEC : 5;
+    int valEC1 = ymVolumeTable[idxEC][envIdx];
+    int valEC2 = ymVolumeTable[0][envIdx];
+    volEC = (valEC1 < valEC2) ? valEC1 : valEC2;
+
+    int reg8 = registers[8] & 15;
+    int valA1 = ymVolumeTable[idxEA][reg8];
+    int valA2 = ymVolumeTable[0][reg8];
+    volA = (valA1 < valA2) ? valA1 : valA2;
+
+    int reg9 = registers[9] & 15;
+    int valB1 = ymVolumeTable[idxEB][reg9];
+    int valB2 = ymVolumeTable[0][reg9];
+    volB = (valB1 < valB2) ? valB1 : valB2;
+
+    int reg10 = registers[10] & 15;
+    int valC1 = ymVolumeTable[idxEC][reg10];
+    int valC2 = ymVolumeTable[0][reg10];
+    volC = (valC1 < valC2) ? valC1 : valC2;
 
     // printf("%d,%d,%d\n", volA, volB, volC);
-/*		sidVolumeCompute(0,&volA);
- *              sidVolumeCompute(1,&volB);
- *              sidVolumeCompute(2,&volC);
- */
+    /*		sidVolumeCompute(0,&volA);
+     *              sidVolumeCompute(1,&volB);
+     *              sidVolumeCompute(2,&volC);
+     */
     // ---------------------------------------------------
     // Tone+noise+env+DAC for three voices !
     // ---------------------------------------------------
 #ifdef YM_INTEGER_ONLY
     ymint volLeft, volRight;
-    ymint bt; // TODO: How many bits is bt ?!?
+    ymint bt;  // TODO: How many bits is bt ?!?
 
     // bn = 0xFFFF ou 0
     // mixerNx = 0xFFFF ou 0
@@ -509,22 +545,23 @@ void CYm2149Ex::nextSampleStereo(ymsample& left, ymsample& right)
     volRight >>= 7;
 #else
     ymfloat volLeft, volRight;
-    ymint bt; // bt = enable tone
+    ymint bt;  // bt = enable tone
 
     bt = ((((yms32)posA) >> 31) | mixerTA) & (bn | mixerNA);
-//    volLeft = ((*pVolA)&bt)*.687*0.66;
-    volLeft = ((*pVolA) & bt) * vLeftOut[0] * 0.66f; // TODO: Why *0.66 ?!? Don't remeber :/
+    //    volLeft = ((*pVolA)&bt)*.687*0.66;
+    volLeft = ((*pVolA) & bt) * vLeftOut[0] *
+              0.66f;  // TODO: Why *0.66 ?!? Don't remeber :/
     volRight = ((*pVolA) & bt) * vRightOut[0] * 0.66f;
     bt = ((((yms32)posB) >> 31) | mixerTB) & (bn | mixerNB);
-//    volRight = ((*pVolB)&bt)*.687*0.66;
+    //    volRight = ((*pVolB)&bt)*.687*0.66;
     volLeft += ((*pVolB) & bt) * vLeftOut[1] * 0.66f;
     volRight += ((*pVolB) & bt) * vRightOut[1] * 0.66f;
     bt = ((((yms32)posC) >> 31) | mixerTC) & (bn | mixerNC);
-//    volLeft += ((*pVolC)&bt)*.312*0.67;
-//    volRight += ((*pVolC)&bt)*.312*0.67;
+    //    volLeft += ((*pVolC)&bt)*.312*0.67;
+    //    volRight += ((*pVolC)&bt)*.312*0.67;
     volLeft += ((*pVolC) & bt) * vLeftOut[2] * 0.66f;
     volRight += ((*pVolC) & bt) * vRightOut[2] * 0.66f;
-#endif // ifdef YM_INTEGER_ONLY
+#endif  // ifdef YM_INTEGER_ONLY
 
     // ---------------------------------------------------
     // Inc
@@ -540,76 +577,91 @@ void CYm2149Ex::nextSampleStereo(ymsample& left, ymsample& right)
         }
     }
 
-/*		syncBuzzerPhase += syncBuzzerStep;
- *              if (syncBuzzerPhase&(1<<31))
- *              {
- *                      envPos = 0;
- *                      envPhase = 0;
- *                      syncBuzzerPhase &= 0x7fffffff;
- *              }
- *
- *              specialEffect[0].sidPos += specialEffect[0].sidStep;
- *              specialEffect[1].sidPos += specialEffect[1].sidStep;
- *              specialEffect[2].sidPos += specialEffect[2].sidStep;
- */
+    /*		syncBuzzerPhase += syncBuzzerStep;
+     *              if (syncBuzzerPhase&(1<<31))
+     *              {
+     *                      envPos = 0;
+     *                      envPhase = 0;
+     *                      syncBuzzerPhase &= 0x7fffffff;
+     *              }
+     *
+     *              specialEffect[0].sidPos += specialEffect[0].sidStep;
+     *              specialEffect[1].sidPos += specialEffect[1].sidStep;
+     *              specialEffect[2].sidPos += specialEffect[2].sidStep;
+     */
     // Apply all filter from filters list.
-    std::list<Filter *>::iterator f_it;
-
     ymint in[2] = {(ymint)volLeft, (ymint)volRight};
-    for (ymint i = F_LEFT; i < F_RIGHT; i++) {
-        for (f_it = filters[i].begin(); f_it != filters[i].end(); f_it++) {
-            (*f_it)->AddSample(in[i]);
-            in[i] = (*f_it)->GetResult();
-        }
-    }
+    // for (ymint i = F_LEFT; i < F_RIGHT; i++) {
+    //     for (auto filter : filters[i]) {
+    //         filter->AddSample(in[i]);
+    //         in[i] = filter->GetResult();
+    //     }
+    // }
     left = in[0];
     right = in[1];
-} // CYm2149Ex::nextSampleStereo
+}  // CYm2149Ex::nextSampleStereo
 
-ymint CYm2149Ex::readRegister(ymint reg)
-{
-    if ((reg >= 0) && (reg <= 13)) return registers[reg];
-    else return -1;
+ymint CYm2149Ex::readRegister(ymint reg) {
+    if ((reg >= 0) && (reg <= 13))
+        return registers[reg];
+    else
+        return -1;
 }
 
-void CYm2149Ex::writeRegister(ymint reg, ymint data)
-{
-
+void CYm2149Ex::writeRegister(ymint reg, ymint data) {
     switch (reg) {
         case R_A_TONE_PERIOD_LOW:
             registers[R_A_TONE_PERIOD_LOW] = data & 0xFF;
-            stepA = toneStepCompute(registers[R_A_TONE_PERIOD_HIGH], registers[R_A_TONE_PERIOD_LOW]);
-            if (!stepA) posA = (1 << 31);                       // Assume output always 1 if 0 period (for Digi-sample !)
+            stepA = toneStepCompute(registers[R_A_TONE_PERIOD_HIGH],
+                                    registers[R_A_TONE_PERIOD_LOW]);
+            if (!stepA)
+                posA = (1 << 31);  // Assume output always 1 if 0 period (for
+                                   // Digi-sample !)
             break;
 
         case R_B_TONE_PERIOD_LOW:
             registers[R_B_TONE_PERIOD_LOW] = data & 0xFF;
-            stepB = toneStepCompute(registers[R_B_TONE_PERIOD_HIGH], registers[R_B_TONE_PERIOD_LOW]);
-            if (!stepB) posB = (1 << 31);                       // Assume output always 1 if 0 period (for Digi-sample !)
+            stepB = toneStepCompute(registers[R_B_TONE_PERIOD_HIGH],
+                                    registers[R_B_TONE_PERIOD_LOW]);
+            if (!stepB)
+                posB = (1 << 31);  // Assume output always 1 if 0 period (for
+                                   // Digi-sample !)
             break;
 
         case R_C_TONE_PERIOD_LOW:
             registers[R_C_TONE_PERIOD_LOW] = data & 0xFF;
-            stepC = toneStepCompute(registers[R_C_TONE_PERIOD_HIGH], registers[R_C_TONE_PERIOD_LOW]);
-            if (!stepC) posC = (1 << 31);                       // Assume output always 1 if 0 period (for Digi-sample !)
+            stepC = toneStepCompute(registers[R_C_TONE_PERIOD_HIGH],
+                                    registers[R_C_TONE_PERIOD_LOW]);
+            if (!stepC)
+                posC = (1 << 31);  // Assume output always 1 if 0 period (for
+                                   // Digi-sample !)
             break;
 
         case R_A_TONE_PERIOD_HIGH:
             registers[R_A_TONE_PERIOD_HIGH] = data & 0x0F;
-            stepA = toneStepCompute(registers[R_A_TONE_PERIOD_HIGH], registers[R_A_TONE_PERIOD_LOW]);
-            if (!stepA) posA = (1 << 31);                       // Assume output always 1 if 0 period (for Digi-sample !)
+            stepA = toneStepCompute(registers[R_A_TONE_PERIOD_HIGH],
+                                    registers[R_A_TONE_PERIOD_LOW]);
+            if (!stepA)
+                posA = (1 << 31);  // Assume output always 1 if 0 period (for
+                                   // Digi-sample !)
             break;
 
         case R_B_TONE_PERIOD_HIGH:
             registers[R_B_TONE_PERIOD_HIGH] = data & 0x0F;
-            stepB = toneStepCompute(registers[R_B_TONE_PERIOD_HIGH], registers[R_B_TONE_PERIOD_LOW]);
-            if (!stepB) posB = (1 << 31);                       // Assume output always 1 if 0 period (for Digi-sample !)
+            stepB = toneStepCompute(registers[R_B_TONE_PERIOD_HIGH],
+                                    registers[R_B_TONE_PERIOD_LOW]);
+            if (!stepB)
+                posB = (1 << 31);  // Assume output always 1 if 0 period (for
+                                   // Digi-sample !)
             break;
 
         case R_C_TONE_PERIOD_HIGH:
             registers[R_C_TONE_PERIOD_HIGH] = data & 0x0F;
-            stepC = toneStepCompute(registers[R_C_TONE_PERIOD_HIGH], registers[R_C_TONE_PERIOD_LOW]);
-            if (!stepC) posC = (1 << 31);                       // Assume output always 1 if 0 period (for Digi-sample !)
+            stepC = toneStepCompute(registers[R_C_TONE_PERIOD_HIGH],
+                                    registers[R_C_TONE_PERIOD_LOW]);
+            if (!stepC)
+                posC = (1 << 31);  // Assume output always 1 if 0 period (for
+                                   // Digi-sample !)
             break;
 
         case R_NOISE_PERIOD:
@@ -657,12 +709,14 @@ void CYm2149Ex::writeRegister(ymint reg, ymint data)
 
         case R_ENVELOPE_PERIOD_LOW:
             registers[R_ENVELOPE_PERIOD_LOW] = data & 0xFF;
-            envStep = envStepCompute(registers[R_ENVELOPE_PERIOD_HIGH], registers[R_ENVELOPE_PERIOD_LOW]);
+            envStep = envStepCompute(registers[R_ENVELOPE_PERIOD_HIGH],
+                                     registers[R_ENVELOPE_PERIOD_LOW]);
             break;
 
         case R_ENVELOPE_PERIOD_HIGH:
             registers[R_ENVELOPE_PERIOD_HIGH] = data & 0xFF;
-            envStep = envStepCompute(registers[R_ENVELOPE_PERIOD_HIGH], registers[R_ENVELOPE_PERIOD_LOW]);
+            envStep = envStepCompute(registers[R_ENVELOPE_PERIOD_HIGH],
+                                     registers[R_ENVELOPE_PERIOD_LOW]);
             break;
 
         case R_ENVELOPE_SHAPE:
@@ -671,8 +725,8 @@ void CYm2149Ex::writeRegister(ymint reg, ymint data)
             envPhase = 0;
             envShape = data & 0x0F;
             break;
-    } // switch
-} // CYm2149Ex::writeRegister
+    }  // switch
+}  // CYm2149Ex::writeRegister
 /*
  * void	CYm2149Ex::update(ymsample *pSampleBuffer,ymint nbSample)
  * {
@@ -691,17 +745,16 @@ void CYm2149Ex::writeRegister(ymint reg, ymint data)
 /**
  * Generate nbSample sample and put in them in the buffer pSampleBuffer
  */
-void CYm2149Ex::updateStereo(ymsample *pSampleBuffer, ymint nbSample)
-{
+void CYm2149Ex::updateStereo(ymsample *pSampleBuffer, ymint nbSample) {
     ymsample *pBuffer = pSampleBuffer;
 
     if (nbSample > 0) {
-        do{
+        do {
             ymsample left, right;
             nextSampleStereo(left, right);
             *pBuffer++ = left;
             *pBuffer++ = right;
-        }while (--nbSample);
+        } while (--nbSample);
     }
 }
 #if 0
@@ -760,13 +813,12 @@ void CYm2149Ex::syncBuzzerStop(void)
     syncBuzzerPhase = 0;
     syncBuzzerStep = 0;
 }
-#endif // if 0
+#endif  // if 0
 
 /**
  * Set mono output mixer ratio, after calculate if fixed point mode
  */
-void CYm2149Ex::outputMixerMono(ymfloat out[3])
-{
+void CYm2149Ex::outputMixerMono(ymfloat out[3]) {
 #if YM_INTEGER_ONLY
     // Fixed Point Mode: u1.7
     vOut[0] = (ymu8)(out[0] * 128);
@@ -782,8 +834,7 @@ void CYm2149Ex::outputMixerMono(ymfloat out[3])
 /**
  * Set stereo output mixer ratio, after calculate if fixed point mode
  */
-void CYm2149Ex::outputMixerStereo(ymfloat leftOut[3], ymfloat rightOut[3])
-{
+void CYm2149Ex::outputMixerStereo(ymfloat leftOut[3], ymfloat rightOut[3]) {
     // Set default output mixer.
 #ifdef YM_INTEGER_ONLY
     // Fixed Point Mode: u1.7
@@ -805,13 +856,13 @@ void CYm2149Ex::outputMixerStereo(ymfloat leftOut[3], ymfloat rightOut[3])
     vRightOut[1] = rightOut[1];
     vRightOut[2] = rightOut[2];
 #endif
-} // CYm2149Ex::outputMixerStereo
+}  // CYm2149Ex::outputMixerStereo
 
 /**
- * Import emulation parameters from computer profiles (Clock, volume tables, mixer...)
+ * Import emulation parameters from computer profiles (Clock, volume tables,
+ * mixer...)
  */
-void CYm2149Ex::setProfile(ymProfile p)
-{
+void CYm2149Ex::setProfile(ymProfile p) {
     outputMixerMono(p.volOut);
     outputMixerStereo(p.volLeftOut, p.volRightOut);
 

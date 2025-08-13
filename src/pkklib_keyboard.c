@@ -1,12 +1,11 @@
-#include "pkklib.h"
-
-#include "pico/stdlib.h"
 #include <hardware/watchdog.h>
 
-#include "hardware/gpio.h"
 #include "hardware/clocks.h"
+#include "hardware/gpio.h"
 #include "i2ckbd.h"
 #include "lcdspi.h"
+#include "pico/stdlib.h"
+#include "pkklib.h"
 
 void kbd_interrupt();
 
@@ -15,22 +14,22 @@ void kbd_interrupt();
 static uint8_t keycheck = 0;
 static uint8_t keyread = 0;
 static int joystick_pins[KEY_COUNT] = {0};  // Joystick pins emulation
+static uint8_t char_pins[512] = {0};        // char pins
 
 static uint TICKSPERSEC = 1000;
 static uint8_t KEYCHECKTIME = 16;
 
 static u8 frkey[KEY_COUNT];  // key pressed with wait
 
-
 static absolute_time_t now;
 
-static void __attribute__ ((optimize("-Os"))) __not_in_flash_func(timer_tick_cb)(unsigned alarm) {
-
+static void __attribute__((optimize("-Os"))) __not_in_flash_func(timer_tick_cb)(
+    unsigned alarm) {
     absolute_time_t next;
 
-    update_us_since_boot(&next, to_us_since_boot(now) + ( TICKSPERSEC));
+    update_us_since_boot(&next, to_us_since_boot(now) + (TICKSPERSEC));
     if (hardware_alarm_set_target(0, next)) {
-        update_us_since_boot(&next, time_us_64() + ( TICKSPERSEC));
+        update_us_since_boot(&next, time_us_64() + (TICKSPERSEC));
         hardware_alarm_set_target(0, next);
     }
 
@@ -38,11 +37,9 @@ static void __attribute__ ((optimize("-Os"))) __not_in_flash_func(timer_tick_cb)
     if (keycheck) {
         keycheck--;
     }
-
 }
 
-void pkk_keyboard_init(void)
-{
+void pkk_keyboard_init(void) {
     // prepare the timer for the keyboard
     hardware_alarm_claim(0);
     update_us_since_boot(&now, time_us_64());
@@ -50,11 +47,8 @@ void pkk_keyboard_init(void)
     hardware_alarm_force_irq(0);
 }
 
-
-
 // keyboard key status to joystick_pins map
-void set_kdb_key(uint8_t pin_offset, uint8_t key_status)
-{
+void set_kdb_key(uint8_t pin_offset, uint8_t key_status) {
     if (key_status == 1) {
         joystick_pins[pin_offset] = 1;
     } else if (key_status == 3) {
@@ -62,12 +56,19 @@ void set_kdb_key(uint8_t pin_offset, uint8_t key_status)
     }
 }
 
-void kbd_interrupt()
-{
+void set_char_key(uint16_t pin_offset, uint8_t key_status) {
+    if (key_status == 1) {
+        char_pins[pin_offset] = 1;
+    } else if (key_status == 3) {
+        char_pins[pin_offset] = 0;
+    }
+}
+
+void kbd_interrupt() {
     int kbd_ret = -1;
     int c;
     static int ctrlheld = 0;
-    uint8_t key_stat = 0; // press,release, or hold
+    uint8_t key_stat = 0;  // press,release, or hold
 
     if (keycheck == 0) {
         if (keyread == 0) {
@@ -77,19 +78,18 @@ void kbd_interrupt()
             kbd_ret = read_i2c_kbd();
             keyread = 0;
         }
-        keycheck = KEYCHECKTIME; // we check keys every 16 frames
+        keycheck = KEYCHECKTIME;  // we check keys every 16 frames
     }
 
     if (kbd_ret < 0) {
         if (check_if_failed() > 0) {
             // printf("try to reset i2c\n");
             reset_failed();
-            init_i2c_kbd(); // re-init
+            init_i2c_kbd();  // re-init
         }
     }
 
     if (kbd_ret) {
-
         // char str[20];
         // sprintf(str, "%04X ", kbd_ret);
         // lcd_print_string(str);
@@ -98,7 +98,7 @@ void kbd_interrupt()
             ctrlheld = 0;
         else if (kbd_ret == 0xA502) {
             ctrlheld = 1;
-        } else if ((kbd_ret & 0xff) == 1) { // pressed
+        } else if ((kbd_ret & 0xff) == 1) {  // pressed
             key_stat = 1;
         } else if ((kbd_ret & 0xff) == 3) {
             key_stat = 3;
@@ -112,7 +112,7 @@ void kbd_interrupt()
             case 0xA3:
             case 0xA4:
             case 0xA5:
-                realc = -1; // skip shift alt ctrl keys
+                realc = -1;  // skip shift alt ctrl keys
                 break;
             default:
                 realc = c;
@@ -120,40 +120,83 @@ void kbd_interrupt()
         }
 
         c = realc;
-        if (c >= 'a' && c <= 'z' && ctrlheld)
-            c = c - 'a' + 1;
+        if (c >= 'a' && c <= 'z' && ctrlheld) c = c - 'a' + 1;
 
         switch (c) {
-
-            // scanCode in https://github.com/clockworkpi/PicoCalc/blob/master/Code/picocalc_keyboard/keyboard.h
+            // scanCode in
+            // https://github.com/clockworkpi/PicoCalc/blob/master/Code/picocalc_keyboard/keyboard.h
 
             // switch (kbd_ret) {
-            case 0xb5: // UP
+            case 0xb5:  // UP
                 set_kdb_key(KEY_UP, key_stat);
                 break;
-            case 0xb6: // DOWN
+            case 0xb6:  // DOWN
                 set_kdb_key(KEY_DOWN, key_stat);
                 break;
-            case 0xb4: // LEFT
+            case 0xb4:  // LEFT
                 set_kdb_key(KEY_LEFT, key_stat);
                 break;
-            case 0xb7: // RIGHT
+            case 0xb7:  // RIGHT
                 set_kdb_key(KEY_RIGHT, key_stat);
                 break;
-            case 0xb1: // select - ESCAPE
+            case 0xb1:  // select - ESCAPE
                 set_kdb_key(KEY_SELECT, key_stat);
                 break;
-            case 0x0a: // start
+            case 0x0a:  // start
+                set_char_key(0x0D, key_stat);
                 set_kdb_key(KEY_START, key_stat);
                 break;
-            case '[': // B
+            case '[':  // B
                 set_kdb_key(KEY_B, key_stat);
                 break;
-            case ']': // A
+            case ']':  // A
                 set_kdb_key(KEY_A, key_stat);
                 break;
 
-            case 0xC1: // CAPS_LOCK
+            case ' ':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '0':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case '=':
+            case '.':
+            case 8:
+                set_char_key(c, key_stat);
+                break;
+
+            case 0x81:  // F1
+                set_char_key(256 + 1, key_stat);
+                break;
+            case 0x82:  // F2
+                set_char_key(256 + 2, key_stat);
+                break;
+            case 0x83:  // F3
+                set_char_key(256 + 3, key_stat);
+                break;
+            case 0x84:  // F4
+                set_char_key(256 + 4, key_stat);
+                break;
+            case 0x85:  // F5
+                set_char_key(256 + 5, key_stat);
+                break;
+
+            case 0xC1:  // CAPS_LOCK
                 if (ctrlheld) {
                     watchdog_reboot(0, 0, 0);
                 }
@@ -165,19 +208,9 @@ void kbd_interrupt()
     }
 } /* kbd_interrupt */
 
+char pkk_key_pressed(int key) { return joystick_pins[key]; }
 
-
-
-
-
-char pkk_key_pressed(int key)
-{
-    return joystick_pins[key];
-}
-
-
-char pkk_key_pressed_withWait(int key)
-{
+char pkk_key_pressed_withWait(int key) {
     if (pkk_key_pressed(key)) {
         if (frkey[key] == 0) {
             frkey[key] = 20;
@@ -191,8 +224,7 @@ char pkk_key_pressed_withWait(int key)
     return 0;
 }
 
-char pkk_AnyKeyPressed(void)
-{
+char pkk_AnyKeyPressed(void) {
     for (int i = 0; i < KEY_COUNT; i++) {
         if (joystick_pins[i]) {
             return 1;
@@ -200,3 +232,16 @@ char pkk_AnyKeyPressed(void)
     }
     return 0;
 } /* pkk_AnyKeyPressed */
+
+uint16_t pkk_key_getChar(void) {
+    int i;
+
+    for (i = 0; i < 512; i++) {
+        if (char_pins[i]) {
+            char_pins[i] = 0;  // reset the key pressed
+            return i;
+        }
+    }
+
+    return 0;
+}

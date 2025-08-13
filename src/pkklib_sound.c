@@ -115,7 +115,7 @@ void debug_addchar(char c) {
         return;
     }
 
-    pkk_draw_text(x, y, str, RGB565(255, 255, 255), RGB565(0, 0, 0));
+    pkk_draw_text(NULL, x, y, str, RGB565(255, 255, 255), RGB565(0, 0, 0));
     x += 8;
     if (x >= 320) {
         x = 0;

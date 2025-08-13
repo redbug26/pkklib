@@ -34,22 +34,18 @@
  *
  *  -----------------------------------------------------------------------------*/
 
-#include <cassert>
-#include <cstring>
-#include <cstdlib>
 #include "YmMusic.h"
 
-#define _LINEAR_OVRS // Activate linear oversampling (best quality) Only used for DigiMix and UniversalTracker YM file type
+#include <cstdlib>
+#include <cstring>
 
+#define _LINEAR_OVRS  // Activate linear oversampling (best quality) Only used
+                      // for DigiMix and UniversalTracker YM file type
 
 // ATARI-ST MFP chip predivisor
 static const ymint mfpPrediv[8] = {0, 4, 10, 16, 50, 64, 100, 200};
 
-
-
-CYmMusic::CYmMusic(ymint _replayRate)
-{
-
+CYmMusic::CYmMusic(ymint _replayRate) {
     pBigMalloc = NULL;
     pSongName = NULL;
     pSongAuthor = NULL;
@@ -70,32 +66,23 @@ CYmMusic::CYmMusic(ymint _replayRate)
     m_pTimeInfo = NULL;
 }
 
-void CYmMusic::setTimeControl(ymbool bTime)
-{
+void CYmMusic::setTimeControl(ymbool bTime) {
     if (bTime)
         attrib |= A_TIMECONTROL;
     else
         attrib &= (~A_TIMECONTROL);
 }
 
-CYmMusic::~CYmMusic()
-{
+CYmMusic::~CYmMusic() {
     stop();
     unLoad();
 }
 
-void CYmMusic::setLoopMode(ymbool bLoopMode)
-{
-    bLoop = bLoopMode;
-}
+void CYmMusic::setLoopMode(ymbool bLoopMode) { bLoop = bLoopMode; }
 
-void CYmMusic::setPlayerRate(ymint rate)
-{
-    playerRate = rate;
-}
+void CYmMusic::setPlayerRate(ymint rate) { playerRate = rate; }
 
-ymu32 CYmMusic::getPos()
-{
+ymu32 CYmMusic::getPos() {
     if ((songType >= YM_MIX1) && (songType < YM_MIXMAX)) {
         // avoid overflow after 97 seconds and keep only 32bit computing
         return m_iMusicPosInMs;
@@ -103,38 +90,35 @@ ymu32 CYmMusic::getPos()
         return ((ymu32)currentFrame * 1000) / (ymu32)playerRate;
     } else
         return 0;
-
 }
 
-ymu32 CYmMusic::getMusicTime(void)
-{
-
+ymu32 CYmMusic::getMusicTime(void) {
     if ((songType >= YM_MIX1) && (songType < YM_MIXMAX)) {
         return m_musicLenInMs;
     } else if ((nbFrame > 0) && (playerRate > 0)) {
         return ((ymu32)nbFrame * 1000) / (ymu32)playerRate;
     } else
         return 0;
-
 }
 
+void CYmMusic::setMixTime(ymu32 time) {
+    if (time > m_musicLenInMs) return;
 
-void CYmMusic::setMixTime(ymu32 time)
-{
-    if (time > m_musicLenInMs)
-        return;
-
-    assert(m_pTimeInfo);
     for (int i = 0; i < m_nbTimeKey; i++) {
-        ymu32 tEnd = i < (m_nbTimeKey - 1) ? m_pTimeInfo[i + 1].time : m_musicLenInMs;
+        ymu32 tEnd =
+            i < (m_nbTimeKey - 1) ? m_pTimeInfo[i + 1].time : m_musicLenInMs;
         if ((time >= m_pTimeInfo[i].time) && (time < tEnd)) {
             mixPos = m_pTimeInfo[i].nBlock;
-            pCurrentMixSample = pBigSampleBuffer + pMixBlock[mixPos].sampleStart;
+            pCurrentMixSample =
+                pBigSampleBuffer + pMixBlock[mixPos].sampleStart;
             currentSampleLength = (pMixBlock[mixPos].sampleLength) << 12;
-            currentPente = (((ymu32)pMixBlock[mixPos].replayFreq) << 12) / replayRate;
+            currentPente =
+                (((ymu32)pMixBlock[mixPos].replayFreq) << 12) / replayRate;
 
             ymu32 len = tEnd - m_pTimeInfo[i].time;
-            ymu32 t0 = ((time - m_pTimeInfo[i].time) * pMixBlock[mixPos].sampleLength) / len;
+            ymu32 t0 = ((time - m_pTimeInfo[i].time) *
+                        pMixBlock[mixPos].sampleLength) /
+                       len;
 
             currentPos = t0 << 12;
             nbRepeat = m_pTimeInfo[i].nRepeat;
@@ -144,10 +128,9 @@ void CYmMusic::setMixTime(ymu32 time)
 
     m_iMusicPosInMs = time;
     m_iMusicPosAccurateSample = 0;
-} // CYmMusic::setMixTime
+}  // CYmMusic::setMixTime
 
-ymu32 CYmMusic::setMusicTime(ymu32 time)
-{
+ymu32 CYmMusic::setMusicTime(ymu32 time) {
     if (!isSeekable()) return 0;
     ymu32 newTime = 0;
 
@@ -160,23 +143,18 @@ ymu32 CYmMusic::setMusicTime(ymu32 time)
         if (newTime >= getMusicTime()) newTime = 0;
         currentFrame = (newTime * (ymu32)playerRate) / 1000;
     } else if ((songType >= YM_MIX1) && (songType < YM_MIXMAX)) {
-        assert(m_pTimeInfo);
         setMixTime(time);
     }
 
     return newTime;
 }
 
-void CYmMusic::restart(void)
-{
+void CYmMusic::restart(void) {
     setMusicTime(0);
     bMusicOver = YMFALSE;
 }
 
-
-
-void CYmMusic::getMusicInfo(ymMusicInfo_t *pInfo)
-{
+void CYmMusic::getMusicInfo(ymMusicInfo_t *pInfo) {
     if (pInfo) {
         pInfo->pSongName = pSongName;
         pInfo->pSongAuthor = pSongAuthor;
@@ -189,44 +167,26 @@ void CYmMusic::getMusicInfo(ymMusicInfo_t *pInfo)
     }
 }
 
+void CYmMusic::setAttrib(ymint _attrib) { attrib = _attrib; }
 
-void CYmMusic::setAttrib(ymint _attrib)
-{
-    attrib = _attrib;
-}
+ymint CYmMusic::getAttrib(void) { return attrib; }
 
-ymint CYmMusic::getAttrib(void)
-{
-    return attrib;
-}
-
-ymbool CYmMusic::isMono(void)
-{
+ymbool CYmMusic::isMono(void) {
     return ((songType >= YM_TRACKER1) && (songType < YM_TRACKERMAX)) ||
            ((songType >= YM_MIX1) && (songType < YM_MIXMAX));
 }
 
-ymbool CYmMusic::isSeekable(void)
-{
-    return getAttrib() & A_TIMECONTROL;
-}
+ymbool CYmMusic::isSeekable(void) { return getAttrib() & A_TIMECONTROL; }
 
-
-
-void bufferClear(ymsample *pBuffer, ymint nbSample)
-{
+void bufferClear(ymsample *pBuffer, ymint nbSample) {
     memset((void *)pBuffer, 0, nbSample * sizeof(ymsample));
 }
 
-ymbool CYmMusic::update(ymsample *sampleBuffer, ymint nbSample)
-{
+ymbool CYmMusic::update(ymsample *sampleBuffer, ymint nbSample) {
     ymint sampleToCompute;
     ymint vblNbSample;
 
-
-    if ((!bMusicOk) ||
-        (bPause) ||
-        (bMusicOver)) {
+    if ((!bMusicOk) || (bPause) || (bMusicOver)) {
         bufferClear(sampleBuffer, nbSample);
         if (bMusicOver)
             return YMFALSE;
@@ -242,35 +202,31 @@ ymbool CYmMusic::update(ymsample *sampleBuffer, ymint nbSample)
         ymsample *pOut = sampleBuffer;
         ymint nbs = nbSample;
         vblNbSample = replayRate / playerRate;
-        do{
+        do {
             // Nb de sample à calculer avant l'appel de Player
             sampleToCompute = vblNbSample - innerSamplePos;
             // Test si la fin du buffer arrive avant la fin de sampleToCompute
             if (sampleToCompute > nbs) sampleToCompute = nbs;
             innerSamplePos += sampleToCompute;
             if (innerSamplePos >= vblNbSample) {
-                player();                                               // Lecture de la partition (playerRate Hz)
+                player();  // Lecture de la partition (playerRate Hz)
                 innerSamplePos -= vblNbSample;
             }
             if (sampleToCompute > 0) {
-                ymChip.updateStereo(pOut, sampleToCompute);             // YM Emulation.
+                ymChip.updateStereo(pOut, sampleToCompute);  // YM Emulation.
                 pOut += sampleToCompute * 2;
             }
             nbs -= sampleToCompute;
-        }while (nbs > 0);
+        } while (nbs > 0);
 
         ymChip.getChannels(&(channels[0]), &(channels[1]), &(channels[2]));
-
     }
 
-
     return YMTRUE;
-} // CYmMusic::update
+}  // CYmMusic::update
 
-
-
-void CYmMusic::readYm6Effect(unsigned char *pReg, ymint code, ymint prediv, ymint count)
-{
+void CYmMusic::readYm6Effect(unsigned char *pReg, ymint code, ymint prediv,
+                             ymint count) {
     ymint voice;
     ymint ndrum;
 
@@ -284,8 +240,8 @@ void CYmMusic::readYm6Effect(unsigned char *pReg, ymint code, ymint prediv, ymin
 
         voice = ((code & 0x30) >> 4) - 1;
         switch (code & 0xc0) {
-            case 0x00:                                  // SID
-            case 0x80:                                  // Sinus-SID
+            case 0x00:  // SID
+            case 0x80:  // Sinus-SID
 
                 prediv = mfpPrediv[prediv];
                 prediv *= count;
@@ -300,7 +256,7 @@ void CYmMusic::readYm6Effect(unsigned char *pReg, ymint code, ymint prediv, ymin
                 }
                 break;
 
-            case 0x40:                                  // DigiDrum
+            case 0x40:  // DigiDrum
                 ndrum = pReg[voice + 8] & 31;
                 if ((ndrum >= 0) && (ndrum < nbDrum)) {
                     prediv = mfpPrediv[prediv];
@@ -312,7 +268,7 @@ void CYmMusic::readYm6Effect(unsigned char *pReg, ymint code, ymint prediv, ymin
                 }
                 break;
 
-            case 0xc0:                                  // Sync-Buzzer.
+            case 0xc0:  // Sync-Buzzer.
 
                 prediv = mfpPrediv[prediv];
                 prediv *= count;
@@ -323,24 +279,19 @@ void CYmMusic::readYm6Effect(unsigned char *pReg, ymint code, ymint prediv, ymin
                 }
                 break;
 
-
-        } // switch
-
+        }  // switch
     }
-} // CYmMusic::readYm6Effect
+}  // CYmMusic::readYm6Effect
 
-void CYmMusic::setVolume(ymint volume)
-{
-//		ymChip.setGlobalVolume(volume);
+void CYmMusic::setVolume(ymint volume) {
+    //		ymChip.setGlobalVolume(volume);
 }
 
-void CYmMusic::player(void)
-{
+void CYmMusic::player(void) {
     ymu8 *ptr;
     ymu32 prediv;
     ymint voice;
     ymint ndrum;
-
 
     if (currentFrame < 0) currentFrame = 0;
 
@@ -360,33 +311,34 @@ void CYmMusic::player(void)
         ymChip.writeRegister(i, ptr[i]);
     }
 
-/*	ymChip.sidStop(0);
- *      ymChip.sidStop(1);
- *      ymChip.sidStop(2);
- *      ymChip.syncBuzzerStop();
- */
+    /*	ymChip.sidStop(0);
+     *      ymChip.sidStop(1);
+     *      ymChip.sidStop(2);
+     *      ymChip.syncBuzzerStop();
+     */
     // ---------------------------------------------
     // Check digi-drum
     // ---------------------------------------------
-    if (songType == YM_V2) {                                        // MADMAX specific !
+    if (songType == YM_V2) {  // MADMAX specific !
         if (ptr[13] != 0xff) {
             ymChip.writeRegister(11, ptr[11]);
             ymChip.writeRegister(12, 0);
-            ymChip.writeRegister(13, 10); // MADMAX specific !!
+            ymChip.writeRegister(13, 10);  // MADMAX specific !!
         }
-        if (ptr[10] & 0x80) {                                       // bit 7 volume canal C pour annoncer une digi-drum madmax.
+        if (ptr[10] &
+            0x80) {  // bit 7 volume canal C pour annoncer une digi-drum madmax.
             ymint sampleNum;
             ymu32 sampleFrq;
-            ymChip.writeRegister(7, ymChip.readRegister(7) | 0x24); // Coupe TONE + NOISE canal C.
-            sampleNum = ptr[10] & 0x7f;   // Numero du sample
+            ymChip.writeRegister(7, ymChip.readRegister(7) |
+                                        0x24);  // Coupe TONE + NOISE canal C.
+            sampleNum = ptr[10] & 0x7f;         // Numero du sample
 
             if (ptr[12]) {
                 sampleFrq = (MFP_CLOCK / ptr[12]);
-/*				ymChip.drumStart(	2,							// Voice C
- *                                                                      sampleAdress[sampleNum],
- *                                                                      sampleLen[sampleNum],
- *                                                                      sampleFrq);
- */
+                /*				ymChip.drumStart(	2,
+                 * // Voice C sampleAdress[sampleNum], sampleLen[sampleNum],
+                 *                                                                      sampleFrq);
+                 */
             }
         }
     } else if (songType >= YM_V3) {
@@ -402,7 +354,7 @@ void CYmMusic::player(void)
             if (songType == YM_V6) {
                 readYm6Effect(ptr, 1, 6, 14);
                 readYm6Effect(ptr, 3, 8, 15);
-            } else {            // YM5 effect decoding
+            } else {  // YM5 effect decoding
 
                 // ------------------------------------------------------
                 // Sid Voice !!
@@ -416,7 +368,7 @@ void CYmMusic::player(void)
                     tmpFreq = 0;
                     if (prediv) {
                         tmpFreq = 2457600L / prediv;
-//						ymChip.sidStart(voice,tmpFreq,ptr[voice+8]&15);
+                        //						ymChip.sidStart(voice,tmpFreq,ptr[voice+8]&15);
                     }
                 }
 
@@ -424,7 +376,7 @@ void CYmMusic::player(void)
                 // YM5 Digi Drum.
                 // ------------------------------------------------------
                 code = (ptr[3] >> 4) & 3;
-                if (code != 0) {        // Ici un digidrum demarre sur la voie voice.
+                if (code != 0) {  // Ici un digidrum demarre sur la voie voice.
                     voice = code - 1;
                     ndrum = ptr[8 + voice] & 31;
                     if ((ndrum >= 0) && (ndrum < nbDrum)) {
@@ -433,7 +385,7 @@ void CYmMusic::player(void)
                         prediv *= ptr[15];
                         if (prediv) {
                             sampleFrq = MFP_CLOCK / prediv;
-//							ymChip.drumStart(voice,pDrumTab[ndrum].pData,pDrumTab[ndrum].size,sampleFrq);
+                            //							ymChip.drumStart(voice,pDrumTab[ndrum].pData,pDrumTab[ndrum].size,sampleFrq);
                         }
                     }
                 }
@@ -441,7 +393,7 @@ void CYmMusic::player(void)
         }
     }
     currentFrame++;
-} // CYmMusic::player
+}  // CYmMusic::player
 
 /*
  *
@@ -485,11 +437,7 @@ void CYmMusic::player(void)
  *
  */
 
-void CYmMusic::computeTimeInfo(void)
-{
-
-    assert(NULL == m_pTimeInfo);
-
+void CYmMusic::computeTimeInfo(void) {
     // -------------------------------------------
     // Compute nb of mixblock
     // -------------------------------------------
@@ -497,8 +445,7 @@ void CYmMusic::computeTimeInfo(void)
     ymint i;
 
     for (i = 0; i < nbMixBlock; i++) {
-        if (pMixBlock[i].nbRepeat >= 32)
-            pMixBlock[i].nbRepeat = 32;
+        if (pMixBlock[i].nbRepeat >= 32) pMixBlock[i].nbRepeat = 32;
 
         m_nbTimeKey += pMixBlock[i].nbRepeat;
     }
@@ -517,15 +464,15 @@ void CYmMusic::computeTimeInfo(void)
             pKey->nBlock = i;
             pKey++;
 
-            time += (pMixBlock[i].sampleLength * 1000) / pMixBlock[i].replayFreq;
+            time +=
+                (pMixBlock[i].sampleLength * 1000) / pMixBlock[i].replayFreq;
         }
     }
     m_musicLenInMs = time;
 
-} // CYmMusic::computeTimeInfo
+}  // CYmMusic::computeTimeInfo
 
-void CYmMusic::readNextBlockInfo(void)
-{
+void CYmMusic::readNextBlockInfo(void) {
     nbRepeat--;
     if (nbRepeat <= 0) {
         mixPos++;
@@ -544,10 +491,7 @@ void CYmMusic::readNextBlockInfo(void)
     currentPos &= ((1 << 12) - 1);
 }
 
-void CYmMusic::stDigitMix(ymsample *pWrite16, ymint nbs)
-{
-
-
+void CYmMusic::stDigitMix(ymsample *pWrite16, ymint nbs) {
     if (bMusicOver) return;
 
     if (mixPos == -1) {
@@ -559,13 +503,14 @@ void CYmMusic::stDigitMix(ymsample *pWrite16, ymint nbs)
     m_iMusicPosInMs += ((m_iMusicPosAccurateSample) / (replayRate));
     m_iMusicPosAccurateSample %= (replayRate);
 
-    if (nbs) do{
-
-            ymint sa = (ymint)(ymsample)(pCurrentMixSample[currentPos >> 12] << 8);
+    if (nbs) do {
+            ymint sa =
+                (ymint)(ymsample)(pCurrentMixSample[currentPos >> 12] << 8);
 #ifdef _LINEAR_OVRS
             ymint sb = sa;
             if ((currentPos >> 12) < ((currentSampleLength >> 12) - 1))
-                sb = (ymint)(ymsample)(pCurrentMixSample[(currentPos >> 12) + 1] << 8);
+                sb = (ymint)(ymsample)(pCurrentMixSample[(currentPos >> 12) + 1]
+                                       << 8);
             ymint frac = currentPos & ((1 << 12) - 1);
             sa += (((sb - sa) * frac) >> 12);
 #endif
@@ -576,16 +521,14 @@ void CYmMusic::stDigitMix(ymsample *pWrite16, ymint nbs)
                 readNextBlockInfo();
                 if (bMusicOver) return;
             }
-        }while (--nbs);
-} // CYmMusic::stDigitMix
+        } while (--nbs);
+}  // CYmMusic::stDigitMix
 
-void CYmMusic::ymTrackerDesInterleave(void)
-{
+void CYmMusic::ymTrackerDesInterleave(void) {
     unsigned char *a0, *a1, *a2;
     unsigned char *pNewBuffer;
     ymint step;
     ymu32 n1, n2;
-
 
     if (attrib & A_STREAMINTERLEAVED) {
         a0 = pDataStream;
@@ -594,30 +537,26 @@ void CYmMusic::ymTrackerDesInterleave(void)
         step = sizeof(ymTrackerLine_t) * nbVoice;
         n1 = step;
         a2 = pNewBuffer;
-        do{
+        do {
             n2 = nbFrame;
             a1 = a2;
-            do{
+            do {
                 *a1 = *a0++;
                 a1 += step;
-            }while (--n2);
+            } while (--n2);
             a2++;
-        }while (--n1);
+        } while (--n1);
         memcpy(pDataStream, pNewBuffer, size);
         free(pNewBuffer);
         attrib &= (~A_STREAMINTERLEAVED);
     }
-} // CYmMusic::ymTrackerDesInterleave
+}  // CYmMusic::ymTrackerDesInterleave
 
-
-void CYmMusic::ymTrackerInit(ymint volMaxPercent)
-{
+void CYmMusic::ymTrackerInit(ymint volMaxPercent) {
     ymint i, s;
     ymint vol;
     ymint scale;
     ymsample *pTab;
-
-
 
     for (i = 0; i < MAX_VOICE; i++) {
         ymTrackerVoice[i].bRunning = 0;
@@ -638,27 +577,24 @@ void CYmMusic::ymTrackerInit(ymint volMaxPercent)
     // Des-interleave si necessaire.
     ymTrackerDesInterleave();
 
-} // CYmMusic::ymTrackerInit
+}  // CYmMusic::ymTrackerInit
 
-
-void CYmMusic::ymTrackerPlayer(ymTrackerVoice_t *pVoice)
-{
+void CYmMusic::ymTrackerPlayer(ymTrackerVoice_t *pVoice) {
     ymint i;
-// ymTrackerLine_t *pLine;
+    // ymTrackerLine_t *pLine;
     ymu8 *pLine;
 
-/*
- *      ymu8 noteOn;
- *      ymu8 volume;
- *      ymu8 freqHigh;
- *      ymu8 freqLow;
- */
+    /*
+     *      ymu8 noteOn;
+     *      ymu8 volume;
+     *      ymu8 freqHigh;
+     *      ymu8 freqLow;
+     */
 
     // printf("%d\n", nbVoice);
 
-
-//		pLine = (ymTrackerLine_t*)pDataStream;
-//		pLine += (currentFrame*nbVoice);
+    //		pLine = (ymTrackerLine_t*)pDataStream;
+    //		pLine += (currentFrame*nbVoice);
     pLine = pDataStream + (currentFrame * nbVoice) * sizeof(ymTrackerLine_t);
     for (i = 0; i < nbVoice; i++) {
         ymTrackerLine_t line;
@@ -668,16 +604,19 @@ void CYmMusic::ymTrackerPlayer(ymTrackerVoice_t *pVoice)
         line.freqLow = pLine[3];
 
         ymint n;
-//			ymint freq = pVoice[i].sampleFreq = ((ymint)pLine->freqHigh<<8) | pLine->freqLow;
-        ymint freq = pVoice[i].sampleFreq = ((ymint)line.freqHigh << 8) | line.freqLow;
+        //			ymint freq = pVoice[i].sampleFreq =
+        //((ymint)pLine->freqHigh<<8) | pLine->freqLow;
+        ymint freq = pVoice[i].sampleFreq =
+            ((ymint)line.freqHigh << 8) | line.freqLow;
         if (pVoice[i].sampleFreq) {
-//				pVoice[i].sampleVolume = pLine->volume&63;
+            //				pVoice[i].sampleVolume =
+            // pLine->volume&63;
             pVoice[i].sampleVolume = line.volume & 63;
-//				pVoice[i].bLoop = (pLine->volume&0x40);
+            //				pVoice[i].bLoop = (pLine->volume&0x40);
             pVoice[i].bLoop = line.volume & 0x40;
-//				n = pLine->noteOn;
+            //				n = pLine->noteOn;
             n = line.noteOn;
-            if (n != 0xff) {                            // Note ON.
+            if (n != 0xff) {  // Note ON.
                 pVoice[i].bRunning = 1;
                 pVoice[i].pSample = pDrumTab[n].pData;
                 pVoice[i].sampleSize = pDrumTab[n].size;
@@ -687,7 +626,7 @@ void CYmMusic::ymTrackerPlayer(ymTrackerVoice_t *pVoice)
         } else {
             pVoice[i].bRunning = 0;
         }
-//			pLine++;
+        //			pLine++;
         pLine += sizeof(ymTrackerLine_t);
     }
 
@@ -698,11 +637,10 @@ void CYmMusic::ymTrackerPlayer(ymTrackerVoice_t *pVoice)
         }
         currentFrame = 0;
     }
-} // CYmMusic::ymTrackerPlayer
+}  // CYmMusic::ymTrackerPlayer
 
-
-void CYmMusic::ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice, ymsample *pBuffer, ymint nbs)
-{
+void CYmMusic::ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice, ymsample *pBuffer,
+                                 ymint nbs) {
     ymsample *pVolumeTab;
     ymu8 *pSample;
     ymu32 samplePos;
@@ -710,7 +648,6 @@ void CYmMusic::ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice, ymsample *pBuffer, ym
     ymu32 sampleInc;
     ymu32 repLen;
     double step;
-
 
     if (!(pVoice->bRunning)) return;
 
@@ -725,7 +662,7 @@ void CYmMusic::ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice, ymsample *pBuffer, ym
 
     sampleEnd = (pVoice->sampleSize << YMTPREC);
     repLen = (pVoice->repLen << YMTPREC);
-    if (nbs > 0) do{
+    if (nbs > 0) do {
             ymint va = pVolumeTab[pSample[samplePos >> YMTPREC]];
 #ifdef _LINEAR_OVRS
             ymint vb = va;
@@ -746,12 +683,11 @@ void CYmMusic::ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice, ymsample *pBuffer, ym
                     return;
                 }
             }
-        }while (--nbs);
+        } while (--nbs);
     pVoice->samplePos = samplePos;
-} // CYmMusic::ymTrackerVoiceAdd
+}  // CYmMusic::ymTrackerVoiceAdd
 
-void CYmMusic::ymTrackerUpdate(ymsample *pBuffer, ymint nbSample)
-{
+void CYmMusic::ymTrackerUpdate(ymsample *pBuffer, ymint nbSample) {
     ymint i;
     ymint _nbs;
 
@@ -761,14 +697,14 @@ void CYmMusic::ymTrackerUpdate(ymsample *pBuffer, ymint nbSample)
 
     // printf("%d\n", nbVoice);
 
-    do{
+    do {
         if (ymTrackerNbSampleBefore == 0) {
             // Lit la partition ymTracker
             ymTrackerPlayer(ymTrackerVoice);
             if (bMusicOver) return;
             ymTrackerNbSampleBefore = replayRate / playerRate;
         }
-        _nbs = ymTrackerNbSampleBefore;                         // nb avant playerUpdate.
+        _nbs = ymTrackerNbSampleBefore;  // nb avant playerUpdate.
         if (_nbs > nbSample) _nbs = nbSample;
         ymTrackerNbSampleBefore -= _nbs;
         if (_nbs > 0) {
@@ -779,5 +715,5 @@ void CYmMusic::ymTrackerUpdate(ymsample *pBuffer, ymint nbSample)
             pBuffer += _nbs;
             nbSample -= _nbs;
         }
-    }while (nbSample > 0);
-} // CYmMusic::ymTrackerUpdate
+    } while (nbSample > 0);
+}  // CYmMusic::ymTrackerUpdate

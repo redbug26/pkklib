@@ -73,10 +73,12 @@ void pkk_guru_meditation(const char *str) {
     u8 blink = 0;
     lcd_clear();
 
-    pkk_draw_text((320 - 36 * 8) / 2, 50,
+    // pkk_draw_rect_fill(0, 40, 320, 80, RGB565(255, 255, 0));
+
+    pkk_draw_text(NULL, (320 - 36 * 8) / 2, 50,
                   "Guru Medidation. Press ESC to reboot", RGB565(255, 0, 0),
                   RGB565(0, 0, 0));
-    pkk_draw_text((320 - strlen(str) * 8) / 2, 60, str, RGB565(255, 0, 0),
+    pkk_draw_text(NULL, (320 - strlen(str) * 8) / 2, 60, str, RGB565(255, 0, 0),
                   RGB565(0, 0, 0));
 
     // wait for escape key

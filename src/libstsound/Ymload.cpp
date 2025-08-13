@@ -34,13 +34,9 @@
  *
  *  -----------------------------------------------------------------------------*/
 
-#include <clocale>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 
 #include "LZH.H"
 #include "YmMusic.h"

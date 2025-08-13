@@ -36,14 +36,14 @@
 
 #include <string.h>
 
-#include <new>
+// #include <new>
 
 #include "StSoundLibrary.h"
 #include "YmMusic.h"
 
 extern "C" {
 
-YMMUSIC *ymMusicCreate() { return (YMMUSIC *)new (std::nothrow) CYmMusic; }
+YMMUSIC *ymMusicCreate() { return (YMMUSIC *)new CYmMusic; }
 
 ymbool ymMusicLoadMemory(YMMUSIC *pMus, void *pBlock, ymu32 size) {
     CYmMusic *pMusic = (CYmMusic *)pMus;
